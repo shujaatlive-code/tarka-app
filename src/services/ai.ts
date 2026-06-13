@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Base64 helper for image inputs
 async function fileToGenerativePart(file: File): Promise<{ inlineData: { data: string; mimeType: string } }> {
@@ -57,7 +57,7 @@ export async function standardizeRecipeWithGemini(file: File): Promise<any> {
   }
 
   // Real Gemini API Execution
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenerativeAI(apiKey);
   const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const imagePart = await fileToGenerativePart(file);
 
