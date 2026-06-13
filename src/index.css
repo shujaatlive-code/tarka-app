@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* OKLCH Color Tokens mapping semantic layout styles */
+    --background: 0.12 0.015 260;
+    --surface: 0.18 0.015 260;
+    --surface-hover: 0.22 0.018 260;
+    
+    --primary: 0.65 0.22 35;
+    --primary-glow: 0.65 0.22 35 / 0.4;
+    --secondary: 0.78 0.18 70;
+    --success: 0.62 0.16 145;
+    --success-light: 0.62 0.16 145 / 0.15;
+    
+    --text-main: 0.95 0.01 260;
+    --text-muted: 0.72 0.015 260;
+    --border: 1px solid oklch(1 0 0 / 0.07);
+    --border-glow: 0 0 10px oklch(0.65 0.22 35 / 0.25);
+  }
+
+  body {
+    @apply bg-[oklch(var(--background))] text-[oklch(var(--text-main))] min-h-screen font-sans;
+    background-image: 
+      radial-gradient(at 0% 0%, oklch(var(--primary) / 0.06) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(var(--success) / 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  [dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+  }
+}
+
+/* Custom Utilities for Glow and Urdu fonts */
+.tarka-glow {
+  box-shadow: 0 0 20px oklch(var(--primary) / 0.25);
+  border-color: oklch(var(--primary) / 0.35);
+}
+
+.font-urdu-nastaliq {
+  font-family: 'Noto Sans Arabic', 'Noto Nastaliq Urdu', serif;
+}
+
+.glassmorphism {
+  background: oklch(var(--surface) / 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
