@@ -1,6 +1,5 @@
-import { db, storage, auth, isFirebaseConfigured } from './firebase';
+import { db, auth, isFirebaseConfigured } from './firebase';
 import { doc, getDoc, setDoc, collection, getDocs, addDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // --- TypeScript Domain Typings ---
 export interface Recipe {
@@ -454,20 +453,58 @@ export const TarkaDB = {
     localStorage.setItem('tarka_completed_steps', JSON.stringify(steps));
   },
 
-  // 8. Image Upload helper for Firebase Storage
-  async uploadFile(file: File, path: string): Promise<string> {
-    if (!isFirebaseConfigured()) {
-      // Offline fallback: generate mock URL preview
-      return URL.createObjectURL(file);
+// Browser client-side image compressor (scales down and compresses to JPEG to fit within 1MB Firestore limit)
+async function compressImageToBase64(file: File, maxW = 500, maxH = 500, quality = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      resolve('');
+      return;
     }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
 
+        if (width > height) {
+          if (width > maxW) {
+            height = Math.round((height * maxW) / width);
+            width = maxW;
+          }
+        } else {
+          if (height > maxH) {
+            width = Math.round((width * maxH) / height);
+            height = maxH;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const base64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(base64);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// 8. Image Upload helper (Compresses to Base64 data URLs for 100% free Firestore DB storage)
+  async uploadFile(file: File, path: string): Promise<string> {
     try {
-      const fileRef = ref(storage, path);
-      await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(fileRef);
-      return downloadUrl;
+      const base64Str = await compressImageToBase64(file);
+      console.log(`Compressed image successfully. Base64 size: ${Math.round(base64Str.length / 1024)} KB`);
+      return base64Str || URL.createObjectURL(file);
     } catch (err) {
-      console.error("Firebase Storage upload failed, utilizing fallback preview URL:", err);
+      console.warn("Browser compression failed, utilizing object URL preview fallback:", err);
       return URL.createObjectURL(file);
     }
   }
