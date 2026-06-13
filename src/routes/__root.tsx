@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useNavigate } from '@tanstack/react-router';
-import { TarkaDB } from '../services/db.ts';
+import { Outlet, Link } from '@tanstack/react-router';
+import { TarkaDB } from '../services/db';
 
 // Main bilingual dictionaries
 const menuTranslations: Record<string, Record<string, string>> = {

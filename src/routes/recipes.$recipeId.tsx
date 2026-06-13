@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from '@tanstack/react-router';
-import { TarkaDB, Recipe, getVerificationWeight } from '../services/db.ts';
-import { WebWakeLock } from '../services/wakelock.ts';
+import { TarkaDB, Recipe, getVerificationWeight } from '../services/db';
+import { WebWakeLock } from '../services/wakelock';
 
 const detailTranslations: Record<string, Record<string, string>> = {
   en: {

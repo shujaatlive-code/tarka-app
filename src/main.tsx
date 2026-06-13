@@ -9,11 +9,11 @@ import {
 import './index.css';
 
 // Import route components
-import RootLayout from './routes/__root.tsx';
-import FeedRouteComponent from './routes/index.tsx';
-import MatcherRouteComponent from './routes/matcher.tsx';
-import DegchiRouteComponent from './routes/degchi.tsx';
-import RecipeDetailRouteComponent from './routes/recipes.$recipeId.tsx';
+import RootLayout from './routes/__root';
+import FeedRouteComponent from './routes/index';
+import MatcherRouteComponent from './routes/matcher';
+import DegchiRouteComponent from './routes/degchi';
+import RecipeDetailRouteComponent from './routes/recipes.$recipeId';
 
 // 1. Create Route Trees
 const rootRoute = createRootRoute({

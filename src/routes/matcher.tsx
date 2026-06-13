@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { TarkaDB, Recipe, getVerificationWeight } from '../services/db.ts';
+import { TarkaDB, getVerificationWeight } from '../services/db';
 
 const matcherTranslations: Record<string, Record<string, string>> = {
   en: {

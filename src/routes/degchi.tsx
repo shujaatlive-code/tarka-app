@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { TarkaDB, Recipe } from '../services/db.ts';
+import { TarkaDB, Recipe } from '../services/db';
 
 const ocrTranslations: Record<string, Record<string, string>> = {
   en: {
