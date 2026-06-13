@@ -106,7 +106,7 @@ export default function RecipeDetailRouteComponent() {
     });
 
     // Sync header language
-    setDetailLang(lang);
+    setDetailLang(lang === 'ur' ? 'ur' : 'en');
 
     const handleLang = () => setLang(localStorage.getItem('tarka_lang') || 'en');
     window.addEventListener('storage', handleLang);
@@ -125,6 +125,7 @@ export default function RecipeDetailRouteComponent() {
   const dict = detailTranslations[lang] || detailTranslations.en;
   const pantry = TarkaDB.getPantry();
   const weightVal = getVerificationWeight(recipe);
+  const title = lang === 'ur' ? recipe.titleUr : recipe.titleEn;
 
   const isUpvoted = upvotedIds.includes(recipe.id);
   const isCooked = cookedIds.includes(recipe.id);
@@ -318,7 +319,8 @@ export default function RecipeDetailRouteComponent() {
               <div className="flex flex-col gap-2">
                 {childRecipes.map(child => (
                   <Link 
-                    to={`/recipes/${child.id}`}
+                    to="/recipes/$recipeId"
+                    params={{ recipeId: child.id }}
                     key={child.id}
                     className="flex justify-between items-center bg-zinc-950/40 border border-zinc-850 p-3 rounded-xl hover:border-orange-500/30 hover:translate-x-1 transition-all cursor-pointer text-xs"
                   >

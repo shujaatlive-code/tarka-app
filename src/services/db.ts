@@ -304,3 +304,12 @@ export function getVerificationWeight(recipe: Recipe): number {
   const views = Math.max(recipe.views || 0, 1);
   return Number((upvotes * (cooked / views)).toFixed(2));
 }
+
+// Chef Leaders seed database
+export const seedChefs = [
+  { name: "Zia-ur-Rehman", badgeEn: "Tarka Master", badgeUr: "تڑکا ماسٹر", xp: 12000, avatar: "Z", cookedCount: 420 },
+  { name: "Ayesha Khan", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 8500, avatar: "A", cookedCount: 380 },
+  { name: "Jamie Oliver", badgeEn: "Tarka Master", badgeUr: "تڑکا ماسٹر", xp: 7800, avatar: "J", cookedCount: 290 },
+  { name: "Enzo Rossi", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 6400, avatar: "E", cookedCount: 220 },
+  { name: "Zara Mansoor", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 5100, avatar: "Z", cookedCount: 190 }
+];

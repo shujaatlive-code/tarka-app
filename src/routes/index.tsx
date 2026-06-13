@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { TarkaDB, Recipe, getVerificationWeight, seedShorts, seedChefs } from '../services/db';
 
@@ -67,10 +67,10 @@ export default function FeedView() {
   // Filters
   const [occasion, setOccasion] = useState<string>('ALL');
   const [budget, setBudget] = useState<string>('ALL');
-  const [activeCuisine, setActiveCuisine] = useState<string>('ALL');
+  const activeCuisine = 'ALL';
 
-  const [recipes, setRecipes] = useState<Recipe[]>(TarkaDB.getRecipes());
-  const [vaultIds, setVaultIds] = useState<string[]>(TarkaDB.getVaultIds());
+  const recipes = TarkaDB.getRecipes();
+  const vaultIds = TarkaDB.getVaultIds();
 
   useEffect(() => {
     // Listen to market changes or language toggles from header shell
@@ -171,7 +171,7 @@ export default function FeedView() {
                     {s.creatorHandle}
                   </div>
                   <p className="text-[11px] font-bold text-white leading-snug">{title}</p>
-                  <Link to={`/recipes/${s.recipeId}`} className="text-[10px] text-orange-400 font-bold hover:underline">
+                  <Link to="/recipes/$recipeId" params={{ recipeId: s.recipeId }} className="text-[10px] text-orange-400 font-bold hover:underline">
                     🍲 {featured}
                   </Link>
                 </div>
@@ -279,7 +279,7 @@ export default function FeedView() {
             <p className="text-[10px] text-zinc-500 mt-0.5">{dict.leaderDesc}</p>
           </div>
           <div className="flex flex-col gap-3">
-            {seedChefs.map((chef, idx) => {
+            {seedChefs.map((chef: any, idx: number) => {
               const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
               return (
                 <div key={chef.name} className="flex justify-between items-center p-2.5 rounded-xl border border-zinc-800/50 bg-white/[0.01] hover:bg-white/[0.04] transition-all cursor-pointer">
@@ -319,7 +319,7 @@ function RecipeCard({ recipe, lang, dict }: { recipe: Recipe; lang: string; dict
     : '';
 
   return (
-    <Link to={`/recipes/${recipe.id}`} className="bg-zinc-900/40 border border-zinc-800/80 hover:border-orange-500/30 rounded-2xl overflow-hidden flex flex-col transition-all cursor-pointer">
+    <Link to="/recipes/$recipeId" params={{ recipeId: recipe.id }} className="bg-zinc-900/40 border border-zinc-800/80 hover:border-orange-500/30 rounded-2xl overflow-hidden flex flex-col transition-all cursor-pointer">
       <div className="h-44 w-full bg-zinc-950 relative">
         <img 
           src={recipe.image || 'mediterranean_hummus.png'} 

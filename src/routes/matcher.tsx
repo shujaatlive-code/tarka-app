@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { TarkaDB, getVerificationWeight } from '../services/db';
 
@@ -177,7 +177,8 @@ export default function MatcherRouteComponent() {
               const desc = lang === 'ur' ? r.descriptionUr : r.descriptionEn;
               return (
                 <Link 
-                  to={`/recipes/${r.id}`} 
+                  to="/recipes/$recipeId" 
+                  params={{ recipeId: r.id }}
                   key={r.id}
                   className="bg-zinc-900/40 border border-zinc-800/80 hover:border-orange-500/30 rounded-2xl overflow-hidden flex flex-col transition-all cursor-pointer"
                 >
