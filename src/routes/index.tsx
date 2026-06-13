@@ -69,8 +69,36 @@ export default function FeedView() {
   const [budget, setBudget] = useState<string>('ALL');
   const activeCuisine = 'ALL';
 
-  const recipes = TarkaDB.getRecipes();
-  const vaultIds = TarkaDB.getVaultIds();
+  const [recipes, setRecipes] = useState<Recipe[]>(TarkaDB.getRecipes());
+  const [vaultIds, setVaultIds] = useState<string[]>(TarkaDB.getVaultIds());
+  const [profile, setProfile] = useState(TarkaDB.getProfile());
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const syncCloudData = async () => {
+      setLoading(true);
+      const cloudRecipes = await TarkaDB.fetchRecipesFromCloud();
+      setRecipes(cloudRecipes);
+      const cloudVault = await TarkaDB.fetchUserVaultCloud();
+      setVaultIds(cloudVault);
+      const cloudProfile = await TarkaDB.fetchUserProfileCloud();
+      setProfile(cloudProfile);
+      setLoading(false);
+    };
+
+    syncCloudData();
+
+    const handleProfileChange = () => {
+      setProfile(TarkaDB.getProfile());
+    };
+
+    window.addEventListener('authReady', syncCloudData);
+    window.addEventListener('profileChange', handleProfileChange);
+    return () => {
+      window.removeEventListener('authReady', syncCloudData);
+      window.removeEventListener('profileChange', handleProfileChange);
+    };
+  }, []);
 
   useEffect(() => {
     // Listen to market changes or language toggles from header shell
@@ -78,14 +106,13 @@ export default function FeedView() {
     const handleLang = () => setLang(localStorage.getItem('tarka_lang') || 'en');
 
     window.addEventListener('marketChange', handleMarket);
-    window.addEventListener('storage', handleLang);
+    window.addEventListener('langChange', handleLang);
     return () => {
       window.removeEventListener('marketChange', handleMarket);
-      window.removeEventListener('storage', handleLang);
+      window.removeEventListener('langChange', handleLang);
     };
   }, []);
 
-  const profile = TarkaDB.getProfile();
   const dict = textTranslations[lang] || textTranslations.en;
 
   // Gather filter combinations
@@ -184,7 +211,10 @@ export default function FeedView() {
       {/* 3. Vault vs Public switches */}
       <div className="flex justify-between items-center border-b border-zinc-800 pb-4 flex-wrap gap-4">
         <div>
-          <h3 className="text-lg font-bold text-white">{dict.switchTitle}</h3>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            {dict.switchTitle}
+            {loading && <span className="w-3.5 h-3.5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>}
+          </h3>
           <p className="text-xs text-zinc-500">{dict.switchSubtitle}</p>
         </div>
         <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-full">

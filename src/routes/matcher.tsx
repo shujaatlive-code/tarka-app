@@ -62,10 +62,10 @@ export default function MatcherRouteComponent() {
     const handleMarket = () => setMarket(localStorage.getItem('tarka_market') || 'PK');
     const handleLang = () => setLang(localStorage.getItem('tarka_lang') || 'en');
     window.addEventListener('marketChange', handleMarket);
-    window.addEventListener('storage', handleLang);
+    window.addEventListener('langChange', handleLang);
     return () => {
       window.removeEventListener('marketChange', handleMarket);
-      window.removeEventListener('storage', handleLang);
+      window.removeEventListener('langChange', handleLang);
     };
   }, []);
 

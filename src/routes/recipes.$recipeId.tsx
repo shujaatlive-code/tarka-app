@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from '@tanstack/react-router';
 import { TarkaDB, Recipe, getVerificationWeight } from '../services/db';
 import { WebWakeLock } from '../services/wakelock';
+import { auth } from '../services/firebase';
 
 const detailTranslations: Record<string, Record<string, string>> = {
   en: {
@@ -89,36 +90,51 @@ export default function RecipeDetailRouteComponent() {
       return;
     }
 
-    // 1. Increment views on load
-    const updatedRecipes = recipes.map(r => {
-      if (r.id === recipeId) {
-        return { ...r, views: (r.views || 0) + 1 };
-      }
-      return r;
-    });
-    setRecipes(updatedRecipes);
-    TarkaDB.saveRecipes(updatedRecipes);
+    const syncCloudData = async () => {
+      const cloudRecipes = await TarkaDB.fetchRecipesFromCloud();
+      setRecipes(cloudRecipes);
+      const cloudUpvoted = TarkaDB.getUpvotes();
+      setUpvotedIds(cloudUpvoted);
+      const cloudCooked = TarkaDB.getCooked();
+      setCookedIds(cloudCooked);
+      const cloudCompleted = TarkaDB.getCompletedSteps();
+      setCompletedSteps(cloudCompleted);
 
-    // 2. Request Wake Lock
+      // Increment views on load
+      const updatedRecipes = cloudRecipes.map(r => {
+        if (r.id === recipeId) {
+          const updated = { ...r, views: (r.views || 0) + 1 };
+          TarkaDB.updateRecipeInCloud(updated);
+          return updated;
+        }
+        return r;
+      });
+      setRecipes(updatedRecipes);
+    };
+
+    syncCloudData();
+
+    // Request Wake Lock
     WebWakeLock.request((active, isFallback) => {
       setWakeLockActive(active);
       setWakeLockIsFallback(!!isFallback);
     });
 
-    // Sync header language
-    setDetailLang(lang === 'ur' ? 'ur' : 'en');
-
     const handleLang = () => setLang(localStorage.getItem('tarka_lang') || 'en');
-    window.addEventListener('storage', handleLang);
+    window.addEventListener('langChange', handleLang);
 
     // Clean up
     return () => {
       WebWakeLock.release(() => {
         setWakeLockActive(false);
       });
-      window.removeEventListener('storage', handleLang);
+      window.removeEventListener('langChange', handleLang);
     };
   }, [recipeId]);
+
+  useEffect(() => {
+    setDetailLang(lang === 'ur' ? 'ur' : 'en');
+  }, [lang]);
 
   if (!recipe) return null;
 
@@ -131,12 +147,15 @@ export default function RecipeDetailRouteComponent() {
   const isCooked = cookedIds.includes(recipe.id);
 
   // Upvote trigger
-  const handleUpvote = () => {
+  const handleUpvote = async () => {
     let nextUpvoted = [...upvotedIds];
+    let updatedRecipeObj: Recipe | undefined;
+
     const updatedRecipes = recipes.map(r => {
       if (r.id === recipe.id) {
         const diff = isUpvoted ? -1 : 1;
-        return { ...r, upvotes: Math.max((r.upvotes || 0) + diff, 0) };
+        updatedRecipeObj = { ...r, upvotes: Math.max((r.upvotes || 0) + diff, 0) };
+        return updatedRecipeObj;
       }
       return r;
     });
@@ -148,39 +167,53 @@ export default function RecipeDetailRouteComponent() {
     }
 
     setRecipes(updatedRecipes);
-    TarkaDB.saveRecipes(updatedRecipes);
-    setUpvotedIds(nextUpvoted);
     TarkaDB.saveUpvotes(nextUpvoted);
+    setUpvotedIds(nextUpvoted);
+
+    if (updatedRecipeObj) {
+      await TarkaDB.updateRecipeInCloud(updatedRecipeObj);
+    }
   };
 
   // Cooked It trigger
-  const handleCookedIt = () => {
-    if (isCooked) return;
-    const nextCooked = [...cookedIds, recipe.id];
+  const handleCookedIt = async (proofUrl?: string) => {
+    if (isCooked && !proofUrl) return;
     
-    // Update recipe cooked Safely count
+    const nextCooked = isCooked ? cookedIds : [...cookedIds, recipe.id];
+    let updatedRecipeObj: Recipe | undefined;
+
     const updatedRecipes = recipes.map(r => {
       if (r.id === recipe.id) {
-        return { ...r, cookedSafely: (r.cookedSafely || 0) + 1 };
+        updatedRecipeObj = { 
+          ...r, 
+          cookedSafely: isCooked ? r.cookedSafely : (r.cookedSafely || 0) + 1,
+          image: proofUrl || r.image
+        };
+        return updatedRecipeObj;
       }
       return r;
     });
 
     // Update Profile XP
     const profile = TarkaDB.getProfile();
-    profile.xp += 20;
-    if (profile.xp >= 100) {
-      profile.level += 1;
-      profile.xp = profile.xp - 100;
-      profile.badge = "Sufi Chef";
+    if (!isCooked) {
+      profile.xp += 20;
+      if (profile.xp >= 100) {
+        profile.level += 1;
+        profile.xp = profile.xp - 100;
+        profile.badge = "Sufi Chef";
+      }
+      await TarkaDB.saveUserProfileCloud(profile);
+      window.dispatchEvent(new Event('profileChange'));
     }
-    TarkaDB.saveProfile(profile);
-    window.dispatchEvent(new Event('profileChange'));
 
     setRecipes(updatedRecipes);
-    TarkaDB.saveRecipes(updatedRecipes);
-    setCookedIds(nextCooked);
     TarkaDB.saveCooked(nextCooked);
+    setCookedIds(nextCooked);
+
+    if (updatedRecipeObj) {
+      await TarkaDB.updateRecipeInCloud(updatedRecipeObj);
+    }
   };
 
   // Check off step
@@ -200,14 +233,20 @@ export default function RecipeDetailRouteComponent() {
   };
 
   // Handle Photo proof
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setProofFile(file);
       setProofPreview(URL.createObjectURL(file));
       
-      // Auto reward XP when uploading proof
-      handleCookedIt();
+      try {
+        const uploadPath = `proofs/${recipe.id}/${auth.currentUser?.uid || 'guest'}_${Date.now()}_${file.name}`;
+        const downloadUrl = await TarkaDB.uploadFile(file, uploadPath);
+        await handleCookedIt(downloadUrl);
+      } catch (err) {
+        console.error("Storage proof upload failed:", err);
+        await handleCookedIt();
+      }
     }
   };
 

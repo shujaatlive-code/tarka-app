@@ -1,5 +1,8 @@
-// --- TypeScript Domain Typings ---
+import { db, storage, auth, isFirebaseConfigured } from './firebase';
+import { doc, getDoc, setDoc, collection, getDocs, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
+// --- TypeScript Domain Typings ---
 export interface Recipe {
   id: string;
   titleEn: string;
@@ -173,7 +176,7 @@ export const seedRecipes: Recipe[] = [
       "Sauté until the gravy clings to the chicken and oil separates on the sides."
     ],
     instructionsUr: [
-      "کڑاہی میں تیل گرم کریں اور چکن کو تیز آنچ پر ادرک لہسن کے پیسٹ کے ساتھ 5 منٹ تک فرائی کریں جب تک رنگ تبدیل نہ ہو جائے۔",
+      "کڑاہی میں تیل گرم کریں اور چکن کو تیز آنچ پر ادرک لہسن کے پیسٹ کے ساتھ 5 منٹ تک فرائی کریں جب تک رنگ تغییر نہ ہو جائے۔",
       "ٹماٹروں کو درمیان سے کاٹ کر چکن کے اوپر رکھ دیں۔ برتن ڈھانپیں اور 10 منٹ تک ہلکی آنچ پر پکنے دیں۔",
       "ٹماٹر کے چھلکے اتار کر انہیں چکن میں اچھی طرح میش کریں۔ اضافی پانی خشک کرنے کے لیے تیز آنچ پر بھونیں۔",
       "لمبائی میں کٹی ہری مرچیں، باریک کٹی ادرک اور تازہ پسی ہوئی کالی مرچ شامل کریں۔",
@@ -231,71 +234,14 @@ export const seedShorts: TarkaShort[] = [
   }
 ];
 
-// --- Local Repository Implementation ---
-export const TarkaDB = {
-  getRecipes(): Recipe[] {
-    const raw = localStorage.getItem('tarka_recipes');
-    return raw ? JSON.parse(raw) : seedRecipes;
-  },
-
-  saveRecipes(recipes: Recipe[]) {
-    localStorage.setItem('tarka_recipes', JSON.stringify(recipes));
-  },
-
-  getProfile(): UserProfile {
-    const raw = localStorage.getItem('tarka_profile');
-    return raw ? JSON.parse(raw) : { name: "Shujat Ali", avatar: "S", xp: 45, level: 1, badge: "Rising Star", badgesUnlocked: ["First Digitization"] };
-  },
-
-  saveProfile(profile: UserProfile) {
-    localStorage.setItem('tarka_profile', JSON.stringify(profile));
-  },
-
-  getPantry(): string[] {
-    const raw = localStorage.getItem('tarka_pantry');
-    return raw ? JSON.parse(raw) : ["Chicken", "Onions", "Tomatoes"];
-  },
-
-  savePantry(pantry: string[]) {
-    localStorage.setItem('tarka_pantry', JSON.stringify(pantry));
-  },
-
-  getVaultIds(): string[] {
-    const raw = localStorage.getItem('tarka_vault_ids');
-    return raw ? JSON.parse(raw) : [];
-  },
-
-  saveVaultIds(vaultIds: string[]) {
-    localStorage.setItem('tarka_vault_ids', JSON.stringify(vaultIds));
-  },
-
-  getUpvotes(): string[] {
-    const raw = localStorage.getItem('tarka_upvoted_ids');
-    return raw ? JSON.parse(raw) : [];
-  },
-
-  saveUpvotes(ids: string[]) {
-    localStorage.setItem('tarka_upvoted_ids', JSON.stringify(ids));
-  },
-
-  getCooked(): string[] {
-    const raw = localStorage.getItem('tarka_cooked_ids');
-    return raw ? JSON.parse(raw) : [];
-  },
-
-  saveCooked(ids: string[]) {
-    localStorage.setItem('tarka_cooked_ids', JSON.stringify(ids));
-  },
-
-  getCompletedSteps(): Record<string, number[]> {
-    const raw = localStorage.getItem('tarka_completed_steps');
-    return raw ? JSON.parse(raw) : {};
-  },
-
-  saveCompletedSteps(steps: Record<string, number[]>) {
-    localStorage.setItem('tarka_completed_steps', JSON.stringify(steps));
-  }
-};
+// Chef Leaders seed database
+export const seedChefs = [
+  { name: "Zia-ur-Rehman", badgeEn: "Tarka Master", badgeUr: "تڑکا ماسٹر", xp: 12000, avatar: "Z", cookedCount: 420 },
+  { name: "Ayesha Khan", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 8500, avatar: "A", cookedCount: 380 },
+  { name: "Jamie Oliver", badgeEn: "Tarka Master", badgeUr: "تڑکا ماسٹر", xp: 7800, avatar: "J", cookedCount: 290 },
+  { name: "Enzo Rossi", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 6400, avatar: "E", cookedCount: 220 },
+  { name: "Zara Mansoor", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 5100, avatar: "Z", cookedCount: 190 }
+];
 
 // --- Scoring Utilities ---
 export function getVerificationWeight(recipe: Recipe): number {
@@ -305,11 +251,224 @@ export function getVerificationWeight(recipe: Recipe): number {
   return Number((upvotes * (cooked / views)).toFixed(2));
 }
 
-// Chef Leaders seed database
-export const seedChefs = [
-  { name: "Zia-ur-Rehman", badgeEn: "Tarka Master", badgeUr: "تڑکا ماسٹر", xp: 12000, avatar: "Z", cookedCount: 420 },
-  { name: "Ayesha Khan", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 8500, avatar: "A", cookedCount: 380 },
-  { name: "Jamie Oliver", badgeEn: "Tarka Master", badgeUr: "تڑکا ماسٹر", xp: 7800, avatar: "J", cookedCount: 290 },
-  { name: "Enzo Rossi", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 6400, avatar: "E", cookedCount: 220 },
-  { name: "Zara Mansoor", badgeEn: "Sufi Chef", badgeUr: "صوفی شیف", xp: 5100, avatar: "Z", cookedCount: 190 }
-];
+// --- Hybrid Cloud / Local Repository Wrapper ---
+export const TarkaDB = {
+  // 1. Recipes Management
+  getRecipes(): Recipe[] {
+    const raw = localStorage.getItem('tarka_recipes');
+    return raw ? JSON.parse(raw) : seedRecipes;
+  },
+
+  saveRecipes(recipes: Recipe[]) {
+    localStorage.setItem('tarka_recipes', JSON.stringify(recipes));
+  },
+
+  async fetchRecipesFromCloud(): Promise<Recipe[]> {
+    if (!isFirebaseConfigured()) {
+      return this.getRecipes();
+    }
+
+    try {
+      const recipesCol = collection(db, 'recipes');
+      const snap = await getDocs(recipesCol);
+      
+      if (snap.empty) {
+        // First-time seed of Firestore
+        console.log("Firestore recipe collection empty, seeding default entries...");
+        for (const r of seedRecipes) {
+          await setDoc(doc(db, 'recipes', r.id), r);
+        }
+        return seedRecipes;
+      }
+
+      const list: Recipe[] = [];
+      snap.forEach(docSnap => {
+        list.push(docSnap.data() as Recipe);
+      });
+      
+      this.saveRecipes(list);
+      return list;
+    } catch (err) {
+      console.warn("Firestore fetch failed, loading local fallback cache:", err);
+      return this.getRecipes();
+    }
+  },
+
+  async publishRecipeToCloud(recipe: Recipe): Promise<void> {
+    const recipes = this.getRecipes();
+    recipes.push(recipe);
+    this.saveRecipes(recipes);
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(doc(db, 'recipes', recipe.id), recipe);
+        console.log("Published recipe to Cloud Firestore:", recipe.id);
+      } catch (err) {
+        console.error("Firestore publish failed:", err);
+      }
+    }
+  },
+
+  async updateRecipeInCloud(recipe: Recipe): Promise<void> {
+    const recipes = this.getRecipes().map(r => r.id === recipe.id ? recipe : r);
+    this.saveRecipes(recipes);
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(doc(db, 'recipes', recipe.id), recipe);
+      } catch (err) {
+        console.error("Firestore recipe update failed:", err);
+      }
+    }
+  },
+
+  // 2. User Profiles
+  getProfile(): UserProfile {
+    const raw = localStorage.getItem('tarka_profile');
+    return raw ? JSON.parse(raw) : { name: "Shujat Ali", avatar: "S", xp: 45, level: 1, badge: "Rising Star", badgesUnlocked: ["First Digitization"] };
+  },
+
+  saveProfile(profile: UserProfile) {
+    localStorage.setItem('tarka_profile', JSON.stringify(profile));
+  },
+
+  async fetchUserProfileCloud(): Promise<UserProfile> {
+    const local = this.getProfile();
+    const uid = auth.currentUser?.uid;
+    if (!isFirebaseConfigured() || !uid) {
+      return local;
+    }
+
+    try {
+      const docRef = doc(db, 'users', uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const cloudData = snap.data() as UserProfile;
+        this.saveProfile(cloudData);
+        return cloudData;
+      } else {
+        // Create initial cloud profile
+        await setDoc(docRef, local);
+        return local;
+      }
+    } catch (err) {
+      console.warn("Firestore fetch profile failed, using local cache:", err);
+      return local;
+    }
+  },
+
+  async saveUserProfileCloud(profile: UserProfile): Promise<void> {
+    this.saveProfile(profile);
+    const uid = auth.currentUser?.uid;
+    if (isFirebaseConfigured() && uid) {
+      try {
+        await setDoc(doc(db, 'users', uid), profile);
+      } catch (err) {
+        console.error("Firestore save profile failed:", err);
+      }
+    }
+  },
+
+  // 3. User Pantry / Cabinets
+  getPantry(): string[] {
+    const raw = localStorage.getItem('tarka_pantry');
+    return raw ? JSON.parse(raw) : ["Chicken", "Onions", "Tomatoes"];
+  },
+
+  savePantry(pantry: string[]) {
+    localStorage.setItem('tarka_pantry', JSON.stringify(pantry));
+  },
+
+  // 4. Private Vault Recipes list
+  getVaultIds(): string[] {
+    const raw = localStorage.getItem('tarka_vault_ids');
+    return raw ? JSON.parse(raw) : [];
+  },
+
+  saveVaultIds(vaultIds: string[]) {
+    localStorage.setItem('tarka_vault_ids', JSON.stringify(vaultIds));
+  },
+
+  async fetchUserVaultCloud(): Promise<string[]> {
+    const local = this.getVaultIds();
+    const uid = auth.currentUser?.uid;
+    if (!isFirebaseConfigured() || !uid) {
+      return local;
+    }
+
+    try {
+      const docRef = doc(db, `users/${uid}/private`, 'vault');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const cloudIds = snap.data().ids || [];
+        this.saveVaultIds(cloudIds);
+        return cloudIds;
+      } else {
+        await setDoc(docRef, { ids: local });
+        return local;
+      }
+    } catch (err) {
+      return local;
+    }
+  },
+
+  async saveUserVaultCloud(ids: string[]): Promise<void> {
+    this.saveVaultIds(ids);
+    const uid = auth.currentUser?.uid;
+    if (isFirebaseConfigured() && uid) {
+      try {
+        await setDoc(doc(db, `users/${uid}/private`, 'vault'), { ids });
+      } catch (err) {
+        console.error("Firestore save vault failed:", err);
+      }
+    }
+  },
+
+  // 5. Upvotes
+  getUpvotes(): string[] {
+    const raw = localStorage.getItem('tarka_upvoted_ids');
+    return raw ? JSON.parse(raw) : [];
+  },
+
+  saveUpvotes(ids: string[]) {
+    localStorage.setItem('tarka_upvoted_ids', JSON.stringify(ids));
+  },
+
+  // 6. Cooked list
+  getCooked(): string[] {
+    const raw = localStorage.getItem('tarka_cooked_ids');
+    return raw ? JSON.parse(raw) : [];
+  },
+
+  saveCooked(ids: string[]) {
+    localStorage.setItem('tarka_cooked_ids', JSON.stringify(ids));
+  },
+
+  // 7. Progressive Kitchen step trackers
+  getCompletedSteps(): Record<string, number[]> {
+    const raw = localStorage.getItem('tarka_completed_steps');
+    return raw ? JSON.parse(raw) : {};
+  },
+
+  saveCompletedSteps(steps: Record<string, number[]>) {
+    localStorage.setItem('tarka_completed_steps', JSON.stringify(steps));
+  },
+
+  // 8. Image Upload helper for Firebase Storage
+  async uploadFile(file: File, path: string): Promise<string> {
+    if (!isFirebaseConfigured()) {
+      // Offline fallback: generate mock URL preview
+      return URL.createObjectURL(file);
+    }
+
+    try {
+      const fileRef = ref(storage, path);
+      await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(fileRef);
+      return downloadUrl;
+    } catch (err) {
+      console.error("Firebase Storage upload failed, utilizing fallback preview URL:", err);
+      return URL.createObjectURL(file);
+    }
+  }
+};
