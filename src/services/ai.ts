@@ -71,23 +71,42 @@ export async function standardizeRecipeWithGemini(file: File): Promise<any> {
   if (apiKey && apiKey !== "mock-api-key") {
     try {
       const ai = new GoogleGenerativeAI(apiKey);
-      const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const imagePart = await fileToGenerativePart(file);
+      const modelNames = ['gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+      let result = null;
+      let lastError = null;
 
-      const result = await model.generateContent({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: SYSTEM_PROMPT },
-              imagePart
-            ]
+      for (const modelName of modelNames) {
+        try {
+          console.log(`[OCR CLIENT] Attempting generation with model: ${modelName}`);
+          const model = ai.getGenerativeModel({ model: modelName });
+          const res = await model.generateContent({
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  { text: SYSTEM_PROMPT },
+                  imagePart
+                ]
+              }
+            ],
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
+          });
+          if (res && res.response) {
+            result = res;
+            break;
           }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json"
+        } catch (err) {
+          console.warn(`[OCR CLIENT] Model ${modelName} failed, trying next. Error:`, err);
+          lastError = err;
         }
-      });
+      }
+
+      if (!result) {
+        throw lastError || new Error("All client-side models failed to transcribe the note.");
+      }
 
       const textResponse = result.response.text();
       if (!textResponse) {

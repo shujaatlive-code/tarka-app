@@ -37,27 +37,46 @@ export default async function handler(req, res) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const modelNames = ['gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+    let result = null;
+    let lastError = null;
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: SYSTEM_PROMPT },
+    for (const modelName of modelNames) {
+      try {
+        console.log(`[OCR SERVER] Attempting generation with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const res = await model.generateContent({
+          contents: [
             {
-              inlineData: {
-                data: base64Data,
-                mimeType: mimeType
-              }
+              role: 'user',
+              parts: [
+                { text: SYSTEM_PROMPT },
+                {
+                  inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType
+                  }
+                }
+              ]
             }
-          ]
+          ],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        });
+        if (res && res.response) {
+          result = res;
+          break;
         }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json"
+      } catch (err) {
+        console.warn(`[OCR SERVER] Model ${modelName} failed, trying next. Error:`, err);
+        lastError = err;
       }
-    });
+    }
+
+    if (!result) {
+      throw lastError || new Error("All generative models failed to transcribe the note.");
+    }
 
     const textResponse = result.response.text();
     if (!textResponse) {
