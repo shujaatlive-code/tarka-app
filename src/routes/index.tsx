@@ -4,56 +4,30 @@ import { TarkaDB, Recipe, getVerificationWeight, seedShorts, seedChefs } from '.
 
 const textTranslations: Record<string, Record<string, string>> = {
   en: {
-    shortsTitle: "Tarka Shorts 📹",
-    shortsDesc: "Watch viral short recipes. Tap to see tips & ingredients.",
-    switchTitle: "Recipe Repository",
-    switchSubtitle: "Browse community posts or access your private digitized vault.",
-    btnPublic: "🌐 Public Pool",
-    btnPrivate: "🔑 Private Vault",
-    dashTitle: "Smart Filter Dashboard",
-    dashDesc: "Collapse duplicates. Filter by relative budget and regional seasonal occasions.",
-    lblOccasion: "Occasion:",
-    lblCost: "Budget Tier:",
-    allOccasions: "All Occasions",
-    quickMeals: "Quick Meals",
-    allBudgets: "All Budgets",
-    cuisineLabel: "Browse by Cuisine",
-    trendingLabel: "Trending Recipes ⚡",
-    directoryLabel: "Recipe Directory 🌐",
-    directoryDesc: "Sorted by Verification Weight.",
-    leaderLabel: "Chef Leaderboard 🏆",
-    leaderDesc: "Ranked by verified Cooked It counts.",
+    bannerTitle: "YOUR CULINARY COMMONS",
+    bannerDesc: "Trusted recipes, family secrets and regional wisdom — distilled into one calm place.",
+    shortsTitle: "TARKA SHORTS",
+    shortsDesc: "60 seconds to something delicious",
+    switchTitle: "Filter the noise",
+    switchSubtitle: "Recipes for you",
+    leaderLabel: "LEADERBOARD",
+    leaderDesc: "Top dastarkhwan keepers",
     level: "Level",
     xp: "XP",
-    cooked: "cooked",
-    weight: "weight",
     alternativeText: "alternative version",
     alternativesText: "alternative versions"
   },
   ur: {
-    shortsTitle: "تڑکا شارٹس 📹",
-    shortsDesc: "کمیونٹی کے باورچیوں کی وائرل ویڈیوز دیکھیں۔",
-    switchTitle: "ترکیبوں کا خزانہ",
-    switchSubtitle: "کمیونٹی پوسٹس براؤز کریں یا اپنے نجی والٹ تک رسائی حاصل کریں۔",
-    btnPublic: "🌐 پبلک پول",
-    btnPrivate: "🔑 ذاتی والٹ",
-    dashTitle: "اسمارٹ فلٹر ڈیش بورڈ",
-    dashDesc: "شور کو ختم کریں۔ بجٹ اور علاقائی موسمی مواقع کے مطابق ترتیب دیں۔",
-    lblOccasion: "تہوار / موقع:",
-    lblCost: "بجٹ کی درجہ بندی:",
-    allOccasions: "تمام مواقع",
-    quickMeals: "تیار کھانا",
-    allBudgets: "تمام بجٹ",
-    cuisineLabel: "پکوان کے لحاظ سے براؤز کریں",
-    trendingLabel: "مقبول ترین ترکیبیں ⚡",
-    directoryLabel: "ترکیبوں کی ڈائریکٹری 🌐",
-    directoryDesc: "تصدیقی وزن کے لحاظ سے ترتیب دیا گیا ہے۔",
-    leaderLabel: "درجہ بندی 🏆",
-    leaderDesc: "کامیابی سے پکانے کی تعداد پر مبنی۔",
+    bannerTitle: "آپ کا دسترخوان",
+    bannerDesc: "قابل اعتماد ترکیبیں، خاندانی راز اور علاقائی حکمت — ایک پرسکون جگہ پر یکجا۔",
+    shortsTitle: "تڑکا شارٹس",
+    shortsDesc: "60 سیکنڈ میں کچھ لذیذ تیار کریں",
+    switchTitle: "شور کو ختم کریں",
+    switchSubtitle: "ترکیبیں آپ کے لیے",
+    leaderLabel: "درجہ بندی",
+    leaderDesc: "دسترخوان کے سرکردہ محافظ",
     level: "لیول",
     xp: "ایکس پی",
-    cooked: "مرتبہ پکایا",
-    weight: "وزن",
     alternativeText: "متبادل نسخہ",
     alternativesText: "متبادل نسخے"
   }
@@ -64,10 +38,9 @@ export default function FeedView() {
   const [market, setMarket] = useState<string>(localStorage.getItem('tarka_market') || 'PK');
   const [viewMode, setViewMode] = useState<'public' | 'private'>('public');
 
-  // Filters
+  // Interactive filters
   const [occasion, setOccasion] = useState<string>('ALL');
-  const [budget, setBudget] = useState<string>('ALL');
-  const activeCuisine = 'ALL';
+  const [trait, setTrait] = useState<string>('ALL');
 
   const [recipes, setRecipes] = useState<Recipe[]>(TarkaDB.getRecipes());
   const [vaultIds, setVaultIds] = useState<string[]>(TarkaDB.getVaultIds());
@@ -101,7 +74,6 @@ export default function FeedView() {
   }, []);
 
   useEffect(() => {
-    // Listen to market changes or language toggles from header shell
     const handleMarket = () => setMarket(localStorage.getItem('tarka_market') || 'PK');
     const handleLang = () => setLang(localStorage.getItem('tarka_lang') || 'en');
 
@@ -115,221 +87,226 @@ export default function FeedView() {
 
   const dict = textTranslations[lang] || textTranslations.en;
 
-  // Gather filter combinations
+  // Filter calculations
   let filtered = recipes.filter(r => r.markets.includes(market as any));
   if (viewMode === 'private') {
     filtered = filtered.filter(r => vaultIds.includes(r.id));
   } else {
-    // Collapse duplicates under parent cards
     filtered = filtered.filter(r => r.isParentRecipe !== false);
   }
 
+  // Row 1: Occasions Filter
   if (occasion !== 'ALL') {
     filtered = filtered.filter(r => r.occasions && r.occasions.includes(occasion));
   }
-  if (budget !== 'ALL') {
-    filtered = filtered.filter(r => r.costTier === budget);
-  }
-  if (activeCuisine !== 'ALL') {
-    filtered = filtered.filter(r => r.cuisineEn === activeCuisine || r.cuisineUr === activeCuisine);
+
+  // Row 2: Traits Filter
+  if (trait !== 'ALL') {
+    if (trait === 'Spicy') {
+      filtered = filtered.filter(r => 
+        r.ingredientsEn.some(i => i.toLowerCase().includes('chili') || i.toLowerCase().includes('pepper') || i.toLowerCase().includes('masala'))
+      );
+    } else if (trait === 'Mild') {
+      filtered = filtered.filter(r => 
+        !r.ingredientsEn.some(i => i.toLowerCase().includes('chili') || i.toLowerCase().includes('masala'))
+      );
+    } else if (trait === 'Vegetarian') {
+      filtered = filtered.filter(r => 
+        !r.ingredientsEn.some(i => i.toLowerCase().includes('chicken') || i.toLowerCase().includes('mutton') || i.toLowerCase().includes('beef') || i.toLowerCase().includes('meat') || i.toLowerCase().includes('fish'))
+      );
+    } else if (trait === 'Quick') {
+      filtered = filtered.filter(r => {
+        const mins = parseInt(r.timeEn);
+        return !isNaN(mins) && mins <= 30;
+      });
+    } else if (trait === 'Budget-friendly') {
+      filtered = filtered.filter(r => r.costTier === '$');
+    }
   }
 
-  // Rank by Weight
   const weightedRecipes = filtered.map(r => ({
     ...r,
     weight: getVerificationWeight(r)
   })).sort((a, b) => b.weight - a.weight);
 
-  const trendingList = weightedRecipes.filter(r => r.isTrending);
+  const occasions = ['ALL', 'Ramadan', 'Eid-ul-Fitr', 'Wedding Season', 'Monsoon Comforts', 'Quick'];
+  const traits = ['ALL', 'Spicy', 'Mild', 'Vegetarian', 'Quick', 'Budget-friendly'];
 
   return (
     <div className="flex flex-col gap-8">
       
       {/* 1. Header Profile Banner */}
-      <div className="flex justify-between items-center bg-zinc-900/40 border border-zinc-800 p-6 rounded-3xl glassmorphism">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center font-bold text-white text-xl border-2 border-orange-500/30">
-            {profile.avatar}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-extrabold text-white text-lg">{profile.name}</h3>
-              <span className="text-[10px] bg-orange-500/10 border border-orange-500/30 text-orange-400 font-bold px-2 py-0.5 rounded-full">
-                {lang === 'ur' ? (profile.badge === 'Rising Star' ? 'رائزنگ اسٹار' : 'صوفی شیف') : profile.badge}
-              </span>
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">Digitizing your family recipes since day one.</p>
-          </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900/40 border border-orange-500/15 p-8 rounded-3xl gap-6 relative overflow-hidden glassmorphism">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-orange-500/5 blur-3xl rounded-full pointer-events-none"></div>
+        
+        <div className="flex flex-col gap-2 max-w-xl text-left">
+          <div className="text-[10px] font-bold text-orange-500 tracking-widest uppercase">{dict.bannerTitle}</div>
+          <h1 className="text-3xl md:text-4xl font-black text-white leading-tight">
+            {lang === 'ur' ? 'دستارخوان پر کیا سجایا جائے گا؟' : 'What will grace the '}
+            {lang !== 'ur' && <span className="bg-gradient-to-r from-orange-400 to-amber-400 text-transparent bg-clip-text">dastarkhwan?</span>}
+          </h1>
+          <p className="text-xs text-zinc-400 mt-1 max-w-md">{dict.bannerDesc}</p>
         </div>
-        <div className="flex flex-col items-end gap-1.5 min-w-[200px]">
-          <div className="flex justify-between w-full text-xs font-semibold">
-            <span className="text-white">{profile.xp} / 100 {dict.xp}</span>
-            <span className="text-orange-400">{dict.level} {profile.level}</span>
+
+        {/* Profile Card on the right */}
+        <div className="bg-zinc-950/60 border border-zinc-800/80 p-5 rounded-2xl flex flex-col gap-3 min-w-[240px] w-full md:w-auto relative shadow-2xl">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] text-zinc-500 font-bold">{profile.name} • Level {profile.level}</span>
+              <h3 className="text-base font-extrabold text-white mt-0.5">
+                {lang === 'ur' ? (profile.badge === 'Rising Star' ? 'رائزنگ اسٹار' : 'صوفی شیف') : profile.badge}
+              </h3>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 text-sm font-bold shadow-lg">
+              ⭐
+            </div>
           </div>
-          <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500" style={{ width: `${profile.xp}%` }}></div>
+          <div className="flex flex-col gap-1 mt-1">
+            <div className="flex justify-between text-[10px] font-bold text-zinc-500">
+              <span>{profile.xp} XP</span>
+              <span>100</span>
+            </div>
+            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500" style={{ width: `${profile.xp}%` }}></div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Video Reels Section */}
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-lg font-extrabold text-white">{dict.shortsTitle}</h2>
-          <p className="text-xs text-zinc-500 mt-1">{dict.shortsDesc}</p>
+      {/* 2. Video Shorts Section */}
+      <div className="flex flex-col gap-3">
+        <div className="text-left">
+          <div className="text-[10px] uppercase font-bold tracking-wider text-orange-500">{dict.shortsTitle}</div>
+          <h2 className="text-lg font-extrabold text-white mt-0.5">{dict.shortsDesc}</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {seedShorts.filter(s => s.market === market).map(s => {
             const title = lang === 'ur' ? s.titleUr : s.titleEn;
             const featured = lang === 'ur' ? s.featuredDishUr : s.featuredDishEn;
             return (
-              <div key={s.id} className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl overflow-hidden hover:border-orange-500/30 transition-all flex flex-col">
-                <div className="aspect-[9/16] bg-zinc-950 flex items-center justify-center relative">
-                  <iframe 
-                    src={s.socialLink} 
-                    title={title}
-                    className="w-full h-full border-0 absolute top-0 left-0"
-                    allowFullScreen
-                  ></iframe>
+              <Link 
+                to="/recipes/$recipeId" 
+                params={{ recipeId: s.recipeId }} 
+                key={s.id} 
+                className="flex items-center gap-3 bg-zinc-900/40 border border-zinc-800/80 hover:border-orange-500/30 px-4 py-2.5 rounded-2xl flex-shrink-0 transition-all cursor-pointer hover:bg-zinc-900/60"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center font-bold text-white text-xs border border-orange-500/20">
+                  {s.creatorAvatar}
                 </div>
-                <div className="p-3 flex flex-col gap-2 mt-auto">
-                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold">
-                    <span className="w-4 h-4 bg-orange-500 text-white rounded-full flex items-center justify-center text-[8px]">{s.creatorAvatar}</span>
-                    {s.creatorHandle}
-                  </div>
-                  <p className="text-[11px] font-bold text-white leading-snug">{title}</p>
-                  <Link to="/recipes/$recipeId" params={{ recipeId: s.recipeId }} className="text-[10px] text-orange-400 font-bold hover:underline">
-                    🍲 {featured}
-                  </Link>
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] font-bold text-orange-400">{s.creatorHandle}</span>
+                  <span className="text-[11px] text-white font-medium max-w-[150px] truncate">{title}</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
       </div>
 
-      {/* 3. Vault vs Public switches */}
-      <div className="flex justify-between items-center border-b border-zinc-800 pb-4 flex-wrap gap-4">
-        <div>
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            {dict.switchTitle}
-            {loading && <span className="w-3.5 h-3.5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>}
-          </h3>
-          <p className="text-xs text-zinc-500">{dict.switchSubtitle}</p>
-        </div>
-        <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-full">
-          <button 
-            onClick={() => setViewMode('public')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${viewMode === 'public' ? 'bg-orange-500 text-white' : 'text-zinc-400'}`}
-          >
-            {dict.btnPublic}
-          </button>
-          <button 
-            onClick={() => setViewMode('private')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${viewMode === 'private' ? 'bg-orange-500 text-white' : 'text-zinc-400'}`}
-          >
-            {dict.btnPrivate} ({vaultIds.length})
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Smart Filters */}
-      <div className="bg-zinc-900/30 border border-zinc-800/80 p-5 rounded-2xl flex flex-col gap-4">
-        <div className="flex justify-between items-start flex-wrap gap-2">
-          <div>
-            <h4 className="font-extrabold text-white text-sm flex items-center gap-1.5">🛡️ {dict.dashTitle}</h4>
-            <p className="text-xs text-zinc-500 mt-0.5">{dict.dashDesc}</p>
-          </div>
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-zinc-500 font-bold">{dict.lblOccasion}</label>
-              <select 
-                value={occasion} 
-                onChange={e => setOccasion(e.target.value)}
-                className="bg-zinc-950 border border-zinc-800 text-xs rounded-lg px-2.5 py-1 text-white focus:outline-none"
-              >
-                <option value="ALL">{dict.allOccasions}</option>
-                <option value="Eid-ul-Fitr">🌙 Eid-ul-Fitr</option>
-                <option value="Eid-ul-Adha">🥩 Eid-ul-Adha</option>
-                <option value="Ramadan">🕌 Ramadan</option>
-                <option value="Wedding Season">🎻 Wedding Season</option>
-                <option value="Monsoon Comforts">🌧️ Monsoon Comforts</option>
-                <option value="Quick">{dict.quickMeals}</option>
-              </select>
+      {/* 3. Filter and Recipe Grid layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 mt-4">
+        
+        {/* Main Feed Container */}
+        <div className="flex flex-col gap-6">
+          {/* Smart Filters Container */}
+          <div className="flex flex-col gap-4 text-left">
+            <div className="flex justify-between items-start md:items-center flex-wrap gap-4 border-b border-zinc-800/60 pb-4">
+              <div>
+                <div className="text-[10px] uppercase font-bold tracking-wider text-orange-500">{dict.switchTitle}</div>
+                <h3 className="text-xl font-extrabold text-white mt-0.5">{dict.switchSubtitle}</h3>
+              </div>
+              
+              {/* View Mode Toggle */}
+              <div className="flex bg-zinc-950 border border-zinc-800 p-1 rounded-xl">
+                <button 
+                  onClick={() => setViewMode('public')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'public' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  Public pool
+                </button>
+                <button 
+                  onClick={() => setViewMode('private')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'private' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  Private vault ({vaultIds.length})
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-zinc-500 font-bold">{dict.lblCost}</label>
-              <select 
-                value={budget} 
-                onChange={e => setBudget(e.target.value)}
-                className="bg-zinc-950 border border-zinc-800 text-xs rounded-lg px-2.5 py-1 text-white focus:outline-none"
-              >
-                <option value="ALL">{dict.allBudgets}</option>
-                <option value="$">🪙 Budget Friendly ($)</option>
-                <option value="$$">🪙 Mid-Range ($$)</option>
-                <option value="$$$">🪙 Premium/Feast ($$$)</option>
-              </select>
+            {/* Occasion Row */}
+            <div className="flex flex-wrap gap-2">
+              {occasions.map(occ => (
+                <button
+                  key={occ}
+                  onClick={() => setOccasion(occ)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                    occasion === occ 
+                      ? 'bg-orange-500 text-white border-orange-600 shadow-md shadow-orange-500/10' 
+                      : 'bg-zinc-950/40 border-zinc-850 text-zinc-400 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  {occ === 'ALL' ? 'All' : occ}
+                </button>
+              ))}
+            </div>
+
+            {/* Trait Row */}
+            <div className="flex flex-wrap gap-2">
+              {traits.map(tr => (
+                <button
+                  key={tr}
+                  onClick={() => setTrait(tr)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                    trait === tr 
+                      ? 'bg-orange-500 text-white border-orange-600 shadow-md shadow-orange-500/10' 
+                      : 'bg-zinc-950/40 border-zinc-850 text-zinc-400 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  {tr === 'ALL' ? 'All' : tr}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* 5. Trending Section */}
-      {viewMode === 'public' && trendingList.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <h3 className="font-bold text-white">{dict.trendingLabel}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {trendingList.slice(0, 3).map(recipe => (
-              <RecipeCard key={recipe.id} recipe={recipe} lang={lang} dict={dict} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 6. Directory and Leaderboard split */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-        {/* Pool feed */}
-        <div className="flex flex-col gap-4">
-          <div>
-            <h3 className="text-lg font-bold text-white">{dict.directoryLabel}</h3>
-            <p className="text-xs text-zinc-500">{dict.directoryDesc}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Grid of Recipe Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
             {weightedRecipes.map(recipe => (
               <RecipeCard key={recipe.id} recipe={recipe} lang={lang} dict={dict} />
             ))}
           </div>
         </div>
 
-        {/* Leaderboard sidebar */}
+        {/* Right Sidebar Leaderboard */}
         <aside className="bg-zinc-900/20 border border-zinc-800/80 p-5 rounded-2xl flex flex-col gap-4 self-start">
-          <div>
-            <h4 className="font-extrabold text-white text-sm">{dict.leaderLabel}</h4>
-            <p className="text-[10px] text-zinc-500 mt-0.5">{dict.leaderDesc}</p>
+          <div className="text-left">
+            <div className="text-[10px] uppercase font-bold tracking-wider text-orange-500">{dict.leaderLabel}</div>
+            <h4 className="font-extrabold text-white text-sm mt-0.5">{dict.leaderDesc}</h4>
           </div>
           <div className="flex flex-col gap-3">
             {seedChefs.map((chef: any, idx: number) => {
-              const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
+              const rankColor = idx === 0 ? 'bg-orange-500 text-white font-black' : idx === 1 ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-900 text-zinc-500';
               return (
-                <div key={chef.name} className="flex justify-between items-center p-2.5 rounded-xl border border-zinc-800/50 bg-white/[0.01] hover:bg-white/[0.04] transition-all cursor-pointer">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-sm font-extrabold">{rank}</span>
-                    <span className="w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center text-xs font-bold text-white">{chef.avatar}</span>
+                <div key={chef.name} className="flex justify-between items-center p-3 rounded-xl border border-zinc-855/50 bg-zinc-950/20 hover:bg-zinc-950/40 transition-all text-left">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${rankColor}`}>
+                      {idx + 1}
+                    </div>
+                    <div className="w-7 h-7 bg-zinc-800 border border-zinc-700 rounded-full flex items-center justify-center text-xs font-bold text-white uppercase">{chef.avatar}</div>
                     <div>
                       <div className="text-xs font-bold text-white">{chef.name}</div>
-                      <span className="text-[9px] text-orange-400 font-semibold">{lang === 'ur' ? chef.badgeUr : chef.badgeEn}</span>
+                      <span className="text-[9px] text-zinc-500 font-semibold">{lang === 'ur' ? chef.badgeUr : chef.badgeEn}</span>
                     </div>
                   </div>
-                  <div className="text-right text-[10px]">
-                    <div className="font-extrabold text-white">{chef.xp} {dict.xp}</div>
-                    <span className="text-zinc-500">{chef.cookedCount} {dict.cooked}</span>
+                  <div className="text-right text-[10px] flex flex-col gap-0.5">
+                    <div className="font-extrabold text-white">{chef.xp.toLocaleString()} XP</div>
+                    <span className="text-emerald-500 font-bold">✓ {chef.cookedCount} cooks</span>
                   </div>
                 </div>
               );
             })}
           </div>
         </aside>
+
       </div>
 
     </div>
@@ -341,40 +318,66 @@ function RecipeCard({ recipe, lang, dict }: { recipe: Recipe; lang: string; dict
   const title = lang === 'ur' ? recipe.titleUr : recipe.titleEn;
   const desc = lang === 'ur' ? recipe.descriptionUr : recipe.descriptionEn;
   const weight = getVerificationWeight(recipe);
-  const diff = lang === 'ur' ? recipe.difficultyUr : recipe.difficultyEn;
   
   const hasAlts = recipe.duplicatesGroup && recipe.duplicatesGroup.length > 0;
   const altText = hasAlts
-    ? `${recipe.duplicatesGroup?.length} ${recipe.duplicatesGroup?.length === 1 ? dict.alternativeText : dict.alternativesText}`
+    ? `+ ${recipe.duplicatesGroup?.length} rolled-up alternative${recipe.duplicatesGroup?.length === 1 ? '' : 's'}`
     : '';
 
+  // Determine occasion tags
+  const tags: string[] = [];
+  if (recipe.occasions && recipe.occasions.length > 0 && recipe.occasions[0] !== 'Quick') {
+    tags.push(recipe.occasions[0]);
+  }
+  
+  // Tag spicy/mild based on ingredients
+  const isSpicy = recipe.ingredientsEn.some(i => i.toLowerCase().includes('chili') || i.toLowerCase().includes('pepper') || i.toLowerCase().includes('masala'));
+  if (isSpicy) {
+    tags.push(lang === 'ur' ? 'مسالہ دار' : 'Spicy');
+  } else {
+    tags.push(lang === 'ur' ? 'ہلکا مسالہ' : 'Mild');
+  }
+
   return (
-    <Link to="/recipes/$recipeId" params={{ recipeId: recipe.id }} className="bg-zinc-900/40 border border-zinc-800/80 hover:border-orange-500/30 rounded-2xl overflow-hidden flex flex-col transition-all cursor-pointer">
-      <div className="h-44 w-full bg-zinc-950 relative">
+    <Link to="/recipes/$recipeId" params={{ recipeId: recipe.id }} className="bg-zinc-900/30 border border-zinc-800/85 hover:border-orange-500/30 rounded-3xl overflow-hidden flex flex-col transition-all cursor-pointer relative hover:-translate-y-0.5 group">
+      <div className="h-48 w-full bg-zinc-950 relative overflow-hidden">
         <img 
           src={recipe.image || 'mediterranean_hummus.png'} 
           alt={title} 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <span className="absolute top-3 right-3 text-[9px] bg-black/60 border border-white/10 font-bold px-2 py-0.5 rounded-full text-white">{recipe.markets.join(', ')}</span>
+        {/* Cost Tier floating top-left */}
+        <span className="absolute top-4 left-4 text-xs font-bold bg-zinc-950/80 border border-zinc-800 px-3 py-1 rounded-xl text-orange-400 shadow-md">
+          {recipe.costTier}
+        </span>
+        {/* Vignette overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/10 to-transparent opacity-80"></div>
       </div>
-      <div className="p-4 flex flex-col flex-1 gap-3">
-        <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500">
-          <span>{diff}</span>
-          <span className="text-orange-400">{recipe.costTier}</span>
-        </div>
-        <h4 className="font-bold text-white text-base leading-snug">{title}</h4>
-        <p className="text-xs text-zinc-400 line-clamp-2">{desc}</p>
-        
-        <div className="flex gap-3 text-[10px] text-zinc-500 font-bold mt-auto pt-2 border-t border-zinc-800/50">
-          <span>🔥 {weight} {dict.weight}</span>
-          <span>👍 {recipe.upvotes}</span>
-          <span>✓ {recipe.cookedSafely} {dict.cooked}</span>
+      
+      <div className="p-5 flex flex-col flex-1 gap-2.5 text-left">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((tag, idx) => (
+            <span key={idx} className="text-[9px] bg-zinc-950/40 border border-zinc-850/60 font-bold px-2.5 py-0.5 rounded-full text-zinc-400">
+              {tag}
+            </span>
+          ))}
         </div>
 
+        <h4 className="font-extrabold text-white text-base leading-snug tracking-tight mt-1">{title}</h4>
+        <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">{desc}</p>
+        
+        {/* Stats Row */}
+        <div className="flex gap-4 text-[10px] text-zinc-500 font-bold mt-auto pt-3 border-t border-zinc-850/50">
+          <span>🕒 {recipe.timeEn}</span>
+          <span>✓ {recipe.cookedSafely} cooked</span>
+          <span>🔥 {weight} weight</span>
+        </div>
+
+        {/* Footer info & Rolled up alternatives */}
         <div className="flex justify-between items-center text-[9px] text-zinc-500 font-semibold mt-1">
           <span>by {recipe.authorName}</span>
-          {hasAlts && <span className="text-orange-500 font-bold">{altText}</span>}
+          {hasAlts && <span className="text-orange-400 font-bold tracking-tight">{altText}</span>}
         </div>
       </div>
     </Link>

@@ -8,9 +8,9 @@ const menuTranslations: Record<string, Record<string, string>> = {
     logo: "ت",
     title: "Tarka",
     sub: "تڑکا",
-    navFeed: "🍲 Dastarkhwan Feed",
+    navFeed: "🍲 Dastarkhwan",
     navMatcher: "🎯 Tarka Matcher",
-    navDegchi: "🍳 Degchi OCR",
+    navDegchi: "🍳 Degchi AI",
     level: "Level",
     xp: "XP"
   },
@@ -18,9 +18,9 @@ const menuTranslations: Record<string, Record<string, string>> = {
     logo: "ت",
     title: "تڑکا",
     sub: "Tarka",
-    navFeed: "دسترخوان فیڈ 🍲",
+    navFeed: "دسترخوان 🍲",
     navMatcher: "تڑکا میچر 🎯",
-    navDegchi: "دیگچی او سی آر 🍳",
+    navDegchi: "دیگچی اے آئی 🍳",
     level: "لیول",
     xp: "ایکس پی"
   }
