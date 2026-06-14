@@ -18,6 +18,17 @@ async function fileToGenerativePart(file: File): Promise<{ inlineData: { data: s
   });
 }
 
+const SYSTEM_PROMPT = `You are Degchi, a careful multilingual culinary document transcriber. Read the uploaded handwritten or printed recipe image/PDF exactly, including Urdu, Roman Urdu, and English. Identify every distinct recipe visible on the page. Do not invent a family name, title, ingredient, quantity, step, occasion, or cooking time. Translate Urdu into concise English while preserving the original Urdu in Urdu fields. Normalize obvious units (tsp, tbsp, cups, g, kg) but preserve uncertain text in notes and mark confidence low. If a title is absent, use a factual ingredient-based title. Return only valid JSON with this exact shape:
+{"recipes":[{"title":"","urduTitle":"","description":"","urduDescription":"","ingredients":[{"name":"","urduName":"","amount":"","category":"Proteins|Vegetables|Spices|Grains|Dairy|Staples"}],"steps":[{"en":"","ur":""}],"cost":"$|$$|$$$","occasion":"Family recipe","timeMinutes":45,"confidence":"high|medium|low","notes":[""]}]}`;
+
+function stripJsonFences(value: string): string {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
 // 1. Google Gemini 1.5 Flash OCR Transcription
 export async function standardizeRecipeWithGemini(file: File): Promise<any> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -40,11 +51,20 @@ export async function standardizeRecipeWithGemini(file: File): Promise<any> {
       const data = await response.json();
       return data;
     } else {
-      const errText = await response.text();
+      const errText = await response.json();
       console.warn("Vercel serverless OCR returned error response, trying client fallback:", errText);
+      // If Vercel API gave a specific error, we propagate its error message
+      if (errText && errText.error) {
+        throw new Error(errText.error);
+      }
     }
   } catch (err) {
-    console.warn("Failed to reach serverless API endpoint, trying client fallback:", err);
+    console.warn("Failed to reach serverless API endpoint or API returned error, trying client fallback:", err);
+    // If it's a specific validation/API error that we threw in Vercel API, propagate it to skip client fallback
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errMsg.includes("could not identify") || errMsg.includes("Ensure the recipe text is visible")) {
+      throw err;
+    }
   }
 
   // 2. Client-side Fallback (if client-side API Key is set and loaded)
@@ -54,43 +74,12 @@ export async function standardizeRecipeWithGemini(file: File): Promise<any> {
       const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const imagePart = await fileToGenerativePart(file);
 
-      const prompt = `
-        You are the "Degchi AI Recipe Standardizer". 
-        Analyze this photo of a handwritten recipe notebook, physical recipe card, or cookbook print.
-        1. Transcribe the contents accurately.
-        2. Normalize all measurements into standard kitchen metrics (e.g. convert 'dahi' to 'Yogurt', 'tamatar' to 'Tomatoes').
-        3. Generate a complete, high-fidelity bilingual representation of the recipe (both English and Urdu).
-        4. Translate the title, description, region, cuisine, time, difficulty, ingredients, and instructions.
-        
-        You MUST respond in strict JSON format with the following keys:
-        {
-          "titleEn": "...",
-          "titleUr": "...",
-          "descriptionEn": "...",
-          "descriptionUr": "...",
-          "ingredientsEn": ["ingredient 1", "ingredient 2"],
-          "ingredientsUr": ["ingredient 1", "ingredient 2"],
-          "instructionsEn": ["step 1", "step 2"],
-          "instructionsUr": ["step 1", "step 2"],
-          "regionEn": "...",
-          "regionUr": "...",
-          "cuisineEn": "...",
-          "cuisineUr": "...",
-          "timeEn": "...",
-          "timeUr": "...",
-          "difficultyEn": "Easy" | "Medium" | "Hard",
-          "difficultyUr": "آسان" | "درمیانہ" | "مشکل",
-          "costTier": "$" | "$$" | "$$$",
-          "occasions": ["Occasion 1", "Occasion 2"]
-        }
-      `;
-
       const result = await model.generateContent({
         contents: [
           {
             role: 'user',
             parts: [
-              { text: prompt },
+              { text: SYSTEM_PROMPT },
               imagePart
             ]
           }
@@ -101,45 +90,65 @@ export async function standardizeRecipeWithGemini(file: File): Promise<any> {
       });
 
       const textResponse = result.response.text();
-      return JSON.parse(textResponse);
+      if (!textResponse) {
+        throw new Error("No response content from client-side Gemini model.");
+      }
+
+      const cleanedText = stripJsonFences(textResponse);
+      const parsedData = JSON.parse(cleanedText);
+
+      if (!parsedData || !Array.isArray(parsedData.recipes) || parsedData.recipes.length === 0) {
+        throw new Error("No recipes could be identified on this upload. Ensure the recipe text is visible.");
+      }
+
+      const rawRecipe = parsedData.recipes[0];
+
+      if (!rawRecipe.ingredients || !Array.isArray(rawRecipe.ingredients) || rawRecipe.ingredients.length === 0) {
+        throw new Error("The handwriting scanner could not identify any ingredients. Try cropping to focus on the recipe list.");
+      }
+      if (!rawRecipe.steps || !Array.isArray(rawRecipe.steps) || rawRecipe.steps.length === 0) {
+        throw new Error("The handwriting scanner could not identify any cooking steps. Try a clearer image.");
+      }
+
+      // Map Lovable schema to frontend Tarka schema
+      const mappedRecipe = {
+        titleEn: rawRecipe.title || "Untitled Scanned Recipe",
+        titleUr: rawRecipe.urduTitle || rawRecipe.title || "بغیر عنوان کی ترکیب",
+        descriptionEn: rawRecipe.description || "Recipe transcribed from the uploaded note.",
+        descriptionUr: rawRecipe.urduDescription || rawRecipe.description || "ترکیب اپ لوڈ کردہ نوٹ سے نقل کی گئی ہے۔",
+        ingredientsEn: rawRecipe.ingredients.map((i: any) => {
+          const amt = i.amount ? i.amount.trim() : "";
+          const name = i.name ? i.name.trim() : "";
+          return amt ? `${amt} ${name}` : name;
+        }).filter(Boolean),
+        ingredientsUr: rawRecipe.ingredients.map((i: any) => {
+          const amt = i.amount ? i.amount.trim() : "";
+          const name = (i.urduName || i.name || "").trim();
+          return amt ? `${amt} ${name}` : name;
+        }).filter(Boolean),
+        instructionsEn: rawRecipe.steps.map((s: any) => (s.en || "").trim()).filter(Boolean),
+        instructionsUr: rawRecipe.steps.map((s: any) => (s.ur || s.en || "").trim()).filter(Boolean),
+        regionEn: "Punjab",
+        regionUr: "پنجاب",
+        cuisineEn: "Pakistani",
+        cuisineUr: "پاکستانی",
+        timeEn: `${rawRecipe.timeMinutes || 45} mins`,
+        timeUr: `${rawRecipe.timeMinutes || 45} منٹ`,
+        difficultyEn: rawRecipe.confidence === 'high' ? 'Easy' : rawRecipe.confidence === 'medium' ? 'Medium' : 'Hard',
+        difficultyUr: rawRecipe.confidence === 'high' ? 'آسان' : rawRecipe.confidence === 'medium' ? 'درمیانہ' : 'مشکل',
+        costTier: ["$", "$$", "$$$"].includes(rawRecipe.cost) ? rawRecipe.cost : "$$",
+        occasions: [rawRecipe.occasion || "Family Recipe"]
+      };
+
+      return mappedRecipe;
     } catch (clientErr) {
       console.error("Direct client-side Gemini execution failed:", clientErr);
-      throw new Error(`Gemini transcription failed. Serverless failed, Client fallback failed: ${clientErr}`);
+      throw new Error(`Gemini transcription failed: ${clientErr instanceof Error ? clientErr.message : String(clientErr)}`);
     }
   }
 
-  // 3. Absolute Fallback: Return Mock Data
-  console.log("No active keys available for live API, returning mock standardized data.");
-  return {
-    titleEn: "Nanis Chicken Karahi (Standardized)",
-    titleUr: "نانی اماں کی چکن کڑاہی (معیاری)",
-    descriptionEn: "A traditional chicken Karahi passed down from grandmother, standardized with measurements and formatted in bilingual text.",
-    descriptionUr: "دادی اماں کی روایتی چکن کڑاہی، جس کی پیمائش کو یکساں کیا گیا ہے اور دو لسانی متن میں فارمیٹ کیا گیا ہے۔",
-    ingredientsEn: ["Chicken", "Tomatoes", "Ginger", "Garlic", "Green Chilies", "Black Pepper", "Oil", "Salt"],
-    ingredientsUr: ["چکن", "ٹماٹر", "ادرک", "لہسن", "ہری مرچیں", "کالی مرچ", "تیل", "نمک"],
-    instructionsEn: [
-      "Chop tomatoes in half. Fry chicken in wok with oil and ginger garlic paste.",
-      "Add tomatoes over chicken, cover and steam for 10 minutes until skins loosen.",
-      "Remove skin of tomatoes, mash them well, and cook on high heat until dry.",
-      "Add freshly ground black pepper and sliced green chilies before serving."
-    ],
-    instructionsUr: [
-      "ٹماٹروں کو درمیان سے آدھا کاٹ لیں۔ کڑاہی میں تیل اور ادرک لہسن کے پیسٹ کے ساتھ چکن فرائی کریں۔",
-      "چکن پر ٹماٹر رکھیں، برتن ڈھانپیں اور 10 منٹ تک بھاپ دیں جب تک چھلکے نرم نہ ہو جائیں۔",
-      "ٹماٹر کے چھلکے اتاریں، انہیں چمچ سے اچھی طرح میش کریں، اور تیز آنچ پر بھونیں۔",
-      "پیش کرنے سے پہلے پسی ہوئی کالی مرچ اور لمبی کٹی ہری مرچیں شامل کریں۔"
-    ],
-    regionEn: "Lahore",
-    regionUr: "لاہور",
-    cuisineEn: "Pakistani",
-    cuisineUr: "پاکستانی",
-    timeEn: "35 mins",
-    timeUr: "35 منٹ",
-    difficultyEn: "Medium",
-    difficultyUr: "درمیانہ",
-    costTier: "$$",
-    occasions: ["Quick"]
-  };
+  // If we reach here, both routes failed (or keys are missing)
+  throw new Error("Recipe analysis is not configured yet. Gemini API key is missing.");
 }
 
 // 2. Unsplash Food Cover Photo Finder

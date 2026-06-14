@@ -11,7 +11,7 @@ const ocrTranslations: Record<string, Record<string, string>> = {
     btnFile: "📁 Upload Snapshot",
     btnCamera: "📸 Use Viewfinder Camera",
     dropPrimary: "Drag & drop recipe photo here or click to browse",
-    dropSub: "Supports PNG, JPEG (Handwritten notes or book prints)",
+    dropSub: "Supports PNG, JPEG, WebP, PDF (Handwritten notes or card prints)",
     terminalTitle: "Degchi Parser Node Active",
     previewTitleLabel: "Degchi Normalized Bilingual Output",
     btnSaveVault: "🔑 Save to Private Vault (Private)",
@@ -22,7 +22,32 @@ const ocrTranslations: Record<string, Record<string, string>> = {
     lblTime: "Cook Time:",
     lblIngredients: "Normalized Ingredients",
     lblInstructions: "Standardized Instructions",
-    saveSuccess: "Saved successfully!"
+    saveSuccess: "Saved successfully!",
+    lblEditTitleEn: "Title (English)",
+    lblEditTitleUr: "Title (Urdu)",
+    lblEditDescEn: "Description (English)",
+    lblEditDescUr: "Description (Urdu)",
+    lblEditRegionEn: "Region (English)",
+    lblEditRegionUr: "Region (Urdu)",
+    lblEditCuisineEn: "Cuisine (English)",
+    lblEditCuisineUr: "Cuisine (Urdu)",
+    lblEditTimeEn: "Cook Time (English)",
+    lblEditTimeUr: "Cook Time (Urdu)",
+    lblEditCost: "Cost Tier",
+    lblEditOccasion: "Occasions (Comma Separated)",
+    btnEdit: "✏️ Edit Recipe Details",
+    btnDone: "✓ Save & Preview",
+    btnAddIngredient: "➕ Add Ingredient Row",
+    btnAddStep: "➕ Add Instruction Step",
+    lblIngEn: "Ingredient (English)",
+    lblIngUr: "Ingredient (Urdu)",
+    lblStepEn: "Step (English)",
+    lblStepUr: "Step (Urdu)",
+    errTitle: "OCR Engine Error ⚠️",
+    cameraErrTitle: "Camera Unavailable 📹",
+    cameraErrText: "Webcam stream could not be acquired (blocked, denied, or not supported). Use 'Upload Snapshot' or trigger Simulation Mode instead.",
+    btnSimulation: "🚀 Run Simulation Mode",
+    btnRetry: "🔄 Upload Another File"
   },
   ur: {
     title: "دیگچی او سی آر ریسیپی اسٹینڈرڈائزر 🤖",
@@ -30,7 +55,7 @@ const ocrTranslations: Record<string, Record<string, string>> = {
     btnFile: "📁 تصویر اپ لوڈ کریں",
     btnCamera: "📸 کیمرہ ویو فائنڈر استعمال کریں",
     dropPrimary: "ترکیب کی تصویر یہاں کھینچ کر لائیں یا براؤز کریں",
-    dropSub: "سپورٹ کرتا ہے: PNG, JPEG (ہاتھ سے لکھی تحریر یا کتاب کے صفحات)",
+    dropSub: "سپورٹ کرتا ہے: PNG, JPEG, WebP, PDF (ہاتھ سے لکھی تحریر یا کتاب کے صفحات)",
     terminalTitle: "دیگچی پارسر نوڈ فعال ہے",
     previewTitleLabel: "دیگچی کی معیاری دو لسانی آؤٹ پٹ",
     btnSaveVault: "🔑 ذاتی والٹ میں محفوظ کریں (پرائیویٹ)",
@@ -41,14 +66,34 @@ const ocrTranslations: Record<string, Record<string, string>> = {
     lblTime: "پکانے کا وقت:",
     lblIngredients: "معیاری اجزاء",
     lblInstructions: "معیاری ہدایات",
-    saveSuccess: "ترکیب کامیابی سے محفوظ ہو گئی!"
+    saveSuccess: "ترکیب کامیابی سے محفوظ ہو گئی!",
+    lblEditTitleEn: "عنوان (انگریزی)",
+    lblEditTitleUr: "عنوان (اردو)",
+    lblEditDescEn: "تفصیل (انگریزی)",
+    lblEditDescUr: "تفصیل (اردو)",
+    lblEditRegionEn: "علاقہ (انگریزی)",
+    lblEditRegionUr: "علاقہ (اردو)",
+    lblEditCuisineEn: "کھانا (انگریزی)",
+    lblEditCuisineUr: "کھانا (اردو)",
+    lblEditTimeEn: "پکانے کا وقت (انگریزی)",
+    lblEditTimeUr: "پکانے کا وقت (اردو)",
+    lblEditCost: "بجٹ کا درجہ",
+    lblEditOccasion: "تہوار (کوما سے الگ کریں)",
+    btnEdit: "✏️ معلومات تبدیل کریں",
+    btnDone: "✓ محفوظ اور پیش نظارہ",
+    btnAddIngredient: "➕ نیا جزو شامل کریں",
+    btnAddStep: "➕ نیا مرحلہ شامل کریں",
+    lblIngEn: "جزو (انگریزی)",
+    lblIngUr: "جزو (اردو)",
+    lblStepEn: "مرحلہ (انگریزی)",
+    lblStepUr: "مرحلہ (اردو)",
+    errTitle: "او سی آر انجن کی غلطی ⚠️",
+    cameraErrTitle: "کیمرہ غیر فعال ہے 📹",
+    cameraErrText: "ویب کیم کی تصویر حاصل نہیں ہوسکی (اجازت نہیں ملی یا سپورٹ نہیں ہے)۔ 'تصویر اپ لوڈ کریں' استعمال کریں یا سیمولیشن موڈ چلائیں۔",
+    btnSimulation: "🚀 سیمولیشن موڈ چلائیں",
+    btnRetry: "🔄 دوسری فائل اپ لوڈ کریں"
   }
 };
-
-interface LogStep {
-  prg: number;
-  msg: string;
-}
 
 export default function DegchiRouteComponent() {
   const [lang, setLang] = useState<string>(localStorage.getItem('tarka_lang') || 'en');
@@ -57,14 +102,21 @@ export default function DegchiRouteComponent() {
   const [cameraFlash, setCameraFlash] = useState<boolean>(false);
   const [flashActive, setFlashActive] = useState<boolean>(false);
   
-  // Simulated logs
+  // WebRTC camera states
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<boolean>(false);
+
+  // Processing logs
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [logs, setLogs] = useState<string[]>([]);
   
-  // Results
+  // Results & Errors
   const [result, setResult] = useState<Recipe | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [previewLang, setPreviewLang] = useState<'en' | 'ur'>('en');
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -80,6 +132,47 @@ export default function DegchiRouteComponent() {
     };
   }, []);
 
+  // Control WebRTC Camera Stream based on mode
+  useEffect(() => {
+    if (ocrMode === 'camera') {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [ocrMode]);
+
+  // Bind WebRTC stream to video element when it becomes available
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(err => console.warn("Video play error:", err));
+    }
+  }, [stream]);
+
+  const startCamera = async () => {
+    setCameraError(false);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false
+      });
+      setStream(mediaStream);
+    } catch (err) {
+      console.warn("Failed to capture WebRTC stream:", err);
+      setCameraError(true);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
   const dict = ocrTranslations[lang] || ocrTranslations.en;
 
   const triggerUpload = () => {
@@ -92,38 +185,58 @@ export default function DegchiRouteComponent() {
     }
   };
 
+  // Draw frame on canvas, convert to blob/File, and trigger OCR parser
   const triggerShutter = () => {
     setFlashActive(true);
     setTimeout(() => {
       setFlashActive(false);
-      // Create a dummy mock print file to run real OCR transcription
-      const dummyFile = new File(["dummy"], "camera_snapshot.jpg", { type: "image/jpeg" });
-      startRealParser(dummyFile);
+
+      if (stream && videoRef.current) {
+        const video = videoRef.current;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], `camera_snapshot_${Date.now()}.jpg`, { type: 'image/jpeg' });
+              startRealParser(file);
+            } else {
+              setError("Failed to process captured camera snapshot frame.");
+            }
+          }, 'image/jpeg', 0.9);
+        }
+      } else {
+        // Fallback warning if shutter is clicked but stream is blocked
+        setError("Camera feed is not active. Please connect a camera or upload a file.");
+      }
     }, 150);
   };
 
   const startRealParser = async (file: File) => {
     setResult(null);
+    setError(null);
+    setIsEditing(false);
     setProcessing(true);
     setProgress(10);
     setLogs(["[DEGCHI NODE INITIALIZED] Booting transcription engine..."]);
 
     try {
-      // Step 1: Uploading snapshot
+      // Step 1: Uploading snapshot (Base64 compression saved to Firestore)
       setProgress(25);
-      setLogs(prev => [...prev, "[STORAGE NODE] Uploading raw image snapshot to Firebase Storage..."]);
-      const storagePath = `ocr_raw/${auth.currentUser?.uid || 'guest'}/${Date.now()}_${file.name}`;
-      const rawImageUrl = await TarkaDB.uploadFile(file, storagePath);
-      console.log("Uploaded raw image to Storage:", rawImageUrl);
+      setLogs(prev => [...prev, "[STORAGE NODE] Compressing image snapshot to Base64..."]);
+      const rawImageUrl = await TarkaDB.uploadFile(file, "");
       
-      // Step 2: Gemini OCR
+      // Step 2: Gemini OCR Multimodal analysis
       setProgress(55);
-      setLogs(prev => [...prev, "[GEMINI AI NODE] Sending snapshot to Gemini 1.5 Flash for vision transcription..."]);
+      setLogs(prev => [...prev, "[GEMINI AI NODE] Submitting document to Gemini 1.5 Flash for vision analysis..."]);
       const parsedRecipe = await standardizeRecipeWithGemini(file);
       
       // Step 3: Unsplash cover photo search
       setProgress(85);
-      setLogs(prev => [...prev, `[UNSPLASH API NODE] Standardized: "${parsedRecipe.titleEn}". Searching cover photograph...`]);
+      setLogs(prev => [...prev, `[UNSPLASH API NODE] Standardized: "${parsedRecipe.titleEn}". Querying default cover artwork...`]);
       const coverUrl = await fetchRecipeCoverPhoto(parsedRecipe.titleEn);
       
       // Step 4: Finalize recipe object
@@ -150,56 +263,83 @@ export default function DegchiRouteComponent() {
       }, 500);
 
     } catch (err) {
-      console.error("Degchi AI Standardizer encountered an error:", err);
+      console.error("Degchi AI Standardizer error:", err);
+      setProcessing(false);
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  // Safe Simulated OCR fallback for testing saving / publishing flows without keys
+  const runSimulation = () => {
+    setResult(null);
+    setError(null);
+    setIsEditing(false);
+    setProcessing(true);
+    setProgress(10);
+    setLogs(["[DEGCHI NODE INITIALIZED] Booting simulated engine..."]);
+
+    setTimeout(() => {
+      setProgress(40);
+      setLogs(prev => [...prev, "[STORAGE NODE] Uploading raw image snapshot (Simulated)..."]);
+    }, 450);
+
+    setTimeout(() => {
+      setProgress(75);
+      setLogs(prev => [...prev, "[GEMINI AI NODE] Standardizing with simulated multimodal analysis..."]);
+    }, 900);
+
+    setTimeout(() => {
       setProgress(100);
-      setLogs(prev => [...prev, `[ERROR] Transcription failed: ${err instanceof Error ? err.message : String(err)}. Loading mock standardized copy...`]);
+      setLogs(prev => [...prev, "[DEGCHI NODE COMPLETE] Compilation simulated successfully!"]);
       
-      // Safe fallback so the user experience doesn't break
+      const fallbackId = "ocr_fallback_" + Date.now();
+      const fallbackRecipe: Recipe = {
+        id: fallbackId,
+        titleEn: "Nanis Chicken Karahi (Standardized)",
+        titleUr: "نانی اماں کی چکن کڑاہی (معیاری)",
+        descriptionEn: "A traditional chicken Karahi passed down from grandmother, standardized with measurements and formatted in bilingual text.",
+        descriptionUr: "دادی اماں کی روایتی چکن کڑاہی، جس کی پیمائش کو یکساں کیا گیا ہے اور دو لسانی متن میں فارمیٹ کیا گیا ہے۔",
+        ingredientsEn: ["Chicken 500g", "Tomatoes 4 units (no onions)", "Ginger 1 tbsp", "Garlic 1 tbsp", "Green Chilies 4 units", "Black Pepper 1/2 tsp", "Oil 4 tbsp", "Salt 1 tsp"],
+        ingredientsUr: ["چکن 500 گرام", "ٹماٹر 4 عدد (پیاز نہیں ڈالنی!)", "ادرک 1 چمچ", "لہسن 1 چمچ", "ہری مرچیں 4 عدد", "کالی مرچ آدھا چمچ", "تیل 4 چمچ", "نمک 1 چمچ"],
+        instructionsEn: [
+          "Heat oil in a wok (karahi) and fry chicken on high heat for 5 minutes with ginger-garlic paste until color changes.",
+          "Cut tomatoes in halves and lay them skin-side up over the chicken. Cover and simmer for 10 minutes.",
+          "Remove tomato skins and mash them into the chicken. Stir fry on high heat to dry the excess water.",
+          "Add slit green chilies, julienned ginger, and freshly crushed black pepper.",
+          "Sauté until the gravy clings to the chicken and oil separates on the sides."
+        ],
+        instructionsUr: [
+          "کڑاہی میں تیل گرم کریں اور چکن کو تیز آنچ پر ادرک لہسن کے پیسٹ کے ساتھ 5 منٹ تک فرائی کریں جب تک رنگ تغییر نہ ہو جائے۔",
+          "ٹماٹروں کو درمیان سے کاٹ کر چکن کے اوپر رکھ دیں۔ برتن ڈھانپیں اور 10 منٹ تک ہلکی آنچ پر پکنے دیں۔",
+          "ٹماٹر کے چھلکے اتار کر انہیں چکن میں اچھی طرح میش کریں۔ اضافی پانی خشک کرنے کے لیے تیز آنچ پر بھونیں۔",
+          "لمبائی میں کٹی ہری مرچیں، باریک کٹی ادرک اور تازہ پسی ہوئی کالی مرچ شامل کریں۔",
+          "یہاں تک بھونیں کہ مصالحہ چکن کے ساتھ لگ جائے اور اطراف میں تیل الگ ہو جائے۔"
+        ],
+        regionEn: "Peshawar",
+        regionUr: "پشاور",
+        cuisineEn: "Pakistani",
+        cuisineUr: "پاکستانی",
+        timeEn: "30 mins",
+        timeUr: "30 منٹ",
+        difficultyEn: "Medium",
+        difficultyUr: "درمیانہ",
+        upvotes: 1,
+        views: 1,
+        cookedSafely: 1,
+        costTier: "$$",
+        occasions: ["Quick"],
+        authorName: TarkaDB.getProfile().name,
+        authorTierEn: TarkaDB.getProfile().badge,
+        authorTierUr: lang === 'ur' ? 'رائزنگ اسٹار' : 'Rising Star',
+        markets: [market as any]
+      };
+      
       setTimeout(() => {
         setProcessing(false);
-        // Load mock result
-        const fallbackId = "ocr_fallback_" + Date.now();
-        setResult({
-          id: fallbackId,
-          titleEn: "Nanis Chicken Karahi (Standardized)",
-          titleUr: "نانی اماں کی چکن کڑاہی (معیاری)",
-          descriptionEn: "A traditional chicken Karahi passed down from grandmother, standardized with measurements and formatted in bilingual text.",
-          descriptionUr: "دادی اماں کی روایتی چکن کڑاہی، جس کی پیمائش کو یکساں کیا گیا ہے اور دو لسانی متن میں فارمیٹ کیا گیا ہے۔",
-          ingredientsEn: ["Chicken", "Tomatoes", "Ginger", "Garlic", "Green Chilies", "Black Pepper", "Oil", "Salt"],
-          ingredientsUr: ["چکن", "ٹماٹر", "ادرک", "لہسن", "ہری مرچیں", "کالی مرچ", "تیل", "نمک"],
-          instructionsEn: [
-            "Chop tomatoes in half. Fry chicken in wok with oil and ginger garlic paste.",
-            "Add tomatoes over chicken, cover and steam for 10 minutes until skins loosen.",
-            "Remove skin of tomatoes, mash them well, and cook on high heat until dry.",
-            "Add freshly ground black pepper and sliced green chilies before serving."
-          ],
-          instructionsUr: [
-            "ٹماٹروں کو درمیان سے آدھا کاٹ لیں۔ کڑاہی میں تیل اور ادرک لہسن کے پیسٹ کے ساتھ چکن فرائی کریں۔",
-            "چکن پر ٹماٹر رکھیں، برتن ڈھانپیں اور 10 منٹ تک بھاپ دیں جب تک چھلکے نرم نہ ہو جائیں۔",
-            "ٹماٹر کے چھلکے اتاریں، انہیں چمچ سے اچھی طرح میش کریں، اور تیز آنچ پر بھونیں۔",
-            "پیش کرنے سے پہلے پسی ہوئی کالی مرچ اور لمبی کٹی ہری مرچیں شامل کریں۔"
-          ],
-          regionEn: "Lahore",
-          regionUr: "لاہور",
-          cuisineEn: "Pakistani",
-          cuisineUr: "پاکستانی",
-          timeEn: "35 mins",
-          timeUr: "35 منٹ",
-          difficultyEn: "Medium",
-          difficultyUr: "درمیانہ",
-          upvotes: 1,
-          views: 1,
-          cookedSafely: 1,
-          costTier: "$",
-          occasions: ["Quick"],
-          authorName: TarkaDB.getProfile().name,
-          authorTierEn: TarkaDB.getProfile().badge,
-          authorTierUr: lang === 'ur' ? 'رائزنگ اسٹار' : 'Rising Star',
-          markets: [market as any]
-        });
+        setResult(fallbackRecipe);
         setPreviewLang('en');
-      }, 1500);
-    }
+      }, 300);
+    }, 1350);
   };
 
   const handleSaveRecipe = async (saveToPrivateOnly: boolean) => {
@@ -214,7 +354,6 @@ export default function DegchiRouteComponent() {
           vaultIds.push(result.id);
         }
         await TarkaDB.saveUserVaultCloud(vaultIds);
-        console.log(`Saved privately: ${result.id}`);
         alert(dict.saveSuccess);
       } else {
         // Award User +50 XP for publishing
@@ -235,6 +374,59 @@ export default function DegchiRouteComponent() {
       alert("Failed to save recipe: " + String(err));
     }
     setResult(null);
+  };
+
+  // --- Interactive Editing Handlers ---
+  const handleIngredientChange = (idx: number, isUr: boolean, val: string) => {
+    if (!result) return;
+    const arrayKey = isUr ? 'ingredientsUr' : 'ingredientsEn';
+    const updated = [...result[arrayKey]];
+    updated[idx] = val;
+    setResult({ ...result, [arrayKey]: updated });
+  };
+
+  const handleAddIngredient = () => {
+    if (!result) return;
+    setResult({
+      ...result,
+      ingredientsEn: [...result.ingredientsEn, ""],
+      ingredientsUr: [...result.ingredientsUr, ""]
+    });
+  };
+
+  const handleRemoveIngredient = (idx: number) => {
+    if (!result) return;
+    setResult({
+      ...result,
+      ingredientsEn: result.ingredientsEn.filter((_, i) => i !== idx),
+      ingredientsUr: result.ingredientsUr.filter((_, i) => i !== idx)
+    });
+  };
+
+  const handleStepChange = (idx: number, isUr: boolean, val: string) => {
+    if (!result) return;
+    const arrayKey = isUr ? 'instructionsUr' : 'instructionsEn';
+    const updated = [...result[arrayKey]];
+    updated[idx] = val;
+    setResult({ ...result, [arrayKey]: updated });
+  };
+
+  const handleAddStep = () => {
+    if (!result) return;
+    setResult({
+      ...result,
+      instructionsEn: [...result.instructionsEn, ""],
+      instructionsUr: [...result.instructionsUr, ""]
+    });
+  };
+
+  const handleRemoveStep = (idx: number) => {
+    if (!result) return;
+    setResult({
+      ...result,
+      instructionsEn: result.instructionsEn.filter((_, i) => i !== idx),
+      instructionsUr: result.instructionsUr.filter((_, i) => i !== idx)
+    });
   };
 
   return (
@@ -276,7 +468,7 @@ export default function DegchiRouteComponent() {
               ref={fileInputRef} 
               onChange={handleFileUpload} 
               className="hidden" 
-              accept="image/*" 
+              accept="image/*,application/pdf" 
             />
           </div>
         )}
@@ -288,8 +480,30 @@ export default function DegchiRouteComponent() {
             {/* Shutter flash overlay */}
             <div className={`absolute inset-0 bg-white z-50 transition-opacity duration-150 pointer-events-none ${flashActive ? 'opacity-100' : 'opacity-0'}`}></div>
             
+            {/* WebRTC Video or Simulation Guide */}
+            {stream && !cameraError ? (
+              <video 
+                ref={videoRef}
+                className="absolute inset-0 w-full h-full object-cover z-10"
+                playsInline
+                muted
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-3 p-4 z-10 text-center select-none pointer-events-none">
+                <div className="w-[180px] bg-zinc-900 border border-zinc-800 shadow-2xl p-3 text-left font-serif leading-normal transform -rotate-1 opacity-70">
+                  <h5 className="text-[10px] font-bold text-orange-400 border-b border-zinc-800 pb-1">نانی اماں کی کڑاہی</h5>
+                  <p className="text-[8px] text-zinc-400 mt-1.5">- آدھا کلو چکن</p>
+                  <p className="text-[8px] text-zinc-400">- ٹماٹر 4 عدد (پیاز نہیں ڈالنی!)</p>
+                  <p className="text-[8px] text-zinc-400">- کالی مرچ آدھا چمچ</p>
+                </div>
+                {cameraError && (
+                  <p className="text-[9px] text-zinc-500 max-w-xs">{dict.cameraErrText}</p>
+                )}
+              </div>
+            )}
+
             {/* Contour guidelines */}
-            <div className="absolute inset-8 border border-white/15 rounded-lg pointer-events-none flex items-center justify-center">
+            <div className="absolute inset-8 border border-white/15 rounded-lg pointer-events-none flex items-center justify-center z-20">
               <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/60"></div>
               <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/60"></div>
               <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/60"></div>
@@ -297,7 +511,7 @@ export default function DegchiRouteComponent() {
             </div>
 
             {/* Grid overlay */}
-            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-20 pointer-events-none">
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-20 pointer-events-none z-20">
               <div className="border border-white/30"></div>
               <div className="border border-white/30"></div>
               <div className="border border-white/30"></div>
@@ -307,14 +521,6 @@ export default function DegchiRouteComponent() {
               <div className="border border-white/30"></div>
               <div className="border border-white/30"></div>
               <div className="border border-white/30"></div>
-            </div>
-
-            {/* Simulated paper subject in focus */}
-            <div className="w-[180px] bg-zinc-900 border border-zinc-800 shadow-2xl p-3 text-left font-serif leading-normal select-none pointer-events-none transform -rotate-1 opacity-70">
-              <h5 className="text-[10px] font-bold text-orange-400 border-b border-zinc-800 pb-1">نانی اماں کی کڑاہی</h5>
-              <p className="text-[8px] text-zinc-400 mt-1.5">- آدھا کلو چکن</p>
-              <p className="text-[8px] text-zinc-400">- ٹماٹر 4 عدد (پیاز نہیں ڈالنی!)</p>
-              <p className="text-[8px] text-zinc-400">- کالی مرچ آدھا چمچ</p>
             </div>
 
             {/* Shutter controls overlay */}
@@ -336,7 +542,6 @@ export default function DegchiRouteComponent() {
                 ✕
               </button>
             </div>
-
           </div>
         )}
 
@@ -364,59 +569,315 @@ export default function DegchiRouteComponent() {
           </div>
         )}
 
+        {/* Error State with options to Simulation or Retry */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 p-5 rounded-2xl flex flex-col gap-4 text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚠️</span>
+              <h3 className="font-bold text-white text-sm">{dict.errTitle}</h3>
+            </div>
+            <p className="text-xs text-red-200/80 leading-relaxed">{error}</p>
+            
+            {/* Context help for missing keys */}
+            {error.includes("not configured") && (
+              <p className="text-[10px] text-zinc-400 bg-zinc-950/40 p-2.5 rounded-lg">
+                💡 Set `VITE_GEMINI_API_KEY` on your development environment to connect live, or run in Simulation Mode to mock the OCR parser step.
+              </p>
+            )}
+
+            <div className="flex gap-2.5 mt-2">
+              <button 
+                onClick={runSimulation}
+                className="flex-1 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs py-2 px-3 rounded-xl font-bold transition-all"
+              >
+                {dict.btnSimulation}
+              </button>
+              <button 
+                onClick={() => { setError(null); triggerUpload(); }}
+                className="flex-1 bg-white/5 hover:bg-white/10 border border-zinc-800 text-white text-xs py-2 px-3 rounded-xl font-bold transition-all"
+              >
+                {dict.btnRetry}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Preview result */}
         {result && (
           <div className="flex flex-col gap-4">
-            <div className="text-xs font-bold text-orange-400 flex items-center gap-1">
-              <span>✨</span> {dict.previewTitleLabel}
-            </div>
-
-            {/* Preview Lang tabs */}
-            <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 self-start">
-              <button 
-                onClick={() => setPreviewLang('en')}
-                className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${previewLang === 'en' ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}
-              >
-                English
-              </button>
-              <button 
-                onClick={() => setPreviewLang('ur')}
-                className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${previewLang === 'ur' ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}
-              >
-                اردو
-              </button>
-            </div>
-
-            {/* Structured view */}
-            <div className={`border border-zinc-800 p-4 rounded-2xl bg-zinc-950/30 flex flex-col gap-3 ${previewLang === 'ur' ? 'font-urdu-nastaliq text-right' : 'font-sans'}`} dir={previewLang === 'ur' ? 'rtl' : 'ltr'}>
-              <h3 className="font-extrabold text-white text-base">{previewLang === 'ur' ? result.titleUr : result.titleEn}</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">{previewLang === 'ur' ? result.descriptionUr : result.descriptionEn}</p>
+            <div className="text-xs font-bold text-orange-400 flex items-center justify-between">
+              <span className="flex items-center gap-1">✨ {dict.previewTitleLabel}</span>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border-t border-b border-zinc-800 py-3 text-[10px] text-zinc-500">
-                <div><strong>{dict.lblRegion}</strong> {previewLang === 'ur' ? result.regionUr : result.regionEn}</div>
-                <div><strong>{dict.lblBudget}</strong> {result.costTier}</div>
-                <div><strong>{dict.lblOccasion}</strong> {result.occasions.join(', ')}</div>
-                <div><strong>{dict.lblTime}</strong> {previewLang === 'ur' ? result.timeUr : result.timeEn}</div>
-              </div>
+              <button 
+                onClick={() => setIsEditing(!isEditing)}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg border border-zinc-700 transition-all"
+              >
+                {isEditing ? dict.btnDone : dict.btnEdit}
+              </button>
+            </div>
 
-              <div className="flex flex-col gap-1.5">
-                <div className="text-xs font-bold text-white">{dict.lblIngredients}</div>
-                <div className="flex flex-wrap gap-1">
-                  {(previewLang === 'ur' ? result.ingredientsUr : result.ingredientsEn).map(ing => (
-                    <span key={ing} className="text-[10px] bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded-full text-zinc-300">{ing}</span>
-                  ))}
+            {/* Language tabs */}
+            {!isEditing && (
+              <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 self-start">
+                <button 
+                  onClick={() => setPreviewLang('en')}
+                  className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${previewLang === 'en' ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}
+                >
+                  English
+                </button>
+                <button 
+                  onClick={() => setPreviewLang('ur')}
+                  className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${previewLang === 'ur' ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}
+                >
+                  اردو
+                </button>
+              </div>
+            )}
+
+            {/* Editable Form Mode */}
+            {isEditing ? (
+              <div className="border border-zinc-800 p-5 rounded-2xl bg-zinc-950/50 flex flex-col gap-4 text-left text-xs text-zinc-300">
+                {/* Titles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditTitleEn}</label>
+                    <input 
+                      type="text" 
+                      value={result.titleEn}
+                      onChange={(e) => setResult({ ...result, titleEn: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditTitleUr}</label>
+                    <input 
+                      type="text" 
+                      value={result.titleUr}
+                      onChange={(e) => setResult({ ...result, titleUr: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs text-right font-urdu-nastaliq"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                {/* Descriptions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditDescEn}</label>
+                    <textarea 
+                      value={result.descriptionEn}
+                      onChange={(e) => setResult({ ...result, descriptionEn: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs h-20 resize-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditDescUr}</label>
+                    <textarea 
+                      value={result.descriptionUr}
+                      onChange={(e) => setResult({ ...result, descriptionUr: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl text-white outline-none focus:border-orange-500/50 text-xs h-20 resize-none text-right font-urdu-nastaliq"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditRegionEn}</label>
+                    <input 
+                      type="text" 
+                      value={result.regionEn}
+                      onChange={(e) => setResult({ ...result, regionEn: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditRegionUr}</label>
+                    <input 
+                      type="text" 
+                      value={result.regionUr}
+                      onChange={(e) => setResult({ ...result, regionUr: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px] text-right font-urdu-nastaliq"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditCuisineEn}</label>
+                    <input 
+                      type="text" 
+                      value={result.cuisineEn}
+                      onChange={(e) => setResult({ ...result, cuisineEn: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditCuisineUr}</label>
+                    <input 
+                      type="text" 
+                      value={result.cuisineUr}
+                      onChange={(e) => setResult({ ...result, cuisineUr: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px] text-right font-urdu-nastaliq"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                {/* Additional metadata */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-b border-zinc-800 pb-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditTimeEn}</label>
+                    <input 
+                      type="text" 
+                      value={result.timeEn}
+                      onChange={(e) => setResult({ ...result, timeEn: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditTimeUr}</label>
+                    <input 
+                      type="text" 
+                      value={result.timeUr}
+                      onChange={(e) => setResult({ ...result, timeUr: e.target.value })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px] text-right font-urdu-nastaliq"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblEditCost}</label>
+                    <select 
+                      value={result.costTier}
+                      onChange={(e) => setResult({ ...result, costTier: e.target.value as any })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px]"
+                    >
+                      <option value="$">$</option>
+                      <option value="$$">$$</option>
+                      <option value="$$$">$$$</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-zinc-400 font-bold">{dict.lblOccasion}</label>
+                    <input 
+                      type="text" 
+                      value={result.occasions.join(', ')}
+                      onChange={(e) => setResult({ ...result, occasions: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                      className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl text-white outline-none focus:border-orange-500/50 text-[11px]"
+                    />
+                  </div>
+                </div>
+
+                {/* Ingredients section */}
+                <div className="flex flex-col gap-2.5">
+                  <div className="font-bold text-white text-[11px] uppercase tracking-wider">{dict.lblIngredients}</div>
+                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                    {result.ingredientsEn.map((ing, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input 
+                          type="text" 
+                          placeholder={dict.lblIngEn}
+                          value={ing}
+                          onChange={(e) => handleIngredientChange(idx, false, e.target.value)}
+                          className="flex-1 bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-white text-[11px] outline-none"
+                        />
+                        <input 
+                          type="text" 
+                          placeholder={dict.lblIngUr}
+                          value={result.ingredientsUr[idx] || ''}
+                          onChange={(e) => handleIngredientChange(idx, true, e.target.value)}
+                          className="flex-1 bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-white text-[11px] outline-none text-right font-urdu-nastaliq"
+                          dir="rtl"
+                        />
+                        <button 
+                          onClick={() => handleRemoveIngredient(idx)}
+                          className="w-7 h-7 bg-red-950/30 hover:bg-red-900/40 border border-red-900/30 text-red-400 rounded-lg font-bold flex items-center justify-center text-[10px]"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={handleAddIngredient}
+                    className="self-start text-[10px] bg-zinc-950 hover:bg-zinc-900 text-orange-400 border border-zinc-800 px-3 py-1.5 rounded-lg transition-all font-semibold"
+                  >
+                    {dict.btnAddIngredient}
+                  </button>
+                </div>
+
+                {/* Steps section */}
+                <div className="flex flex-col gap-2.5 border-t border-zinc-800 pt-4">
+                  <div className="font-bold text-white text-[11px] uppercase tracking-wider">{dict.lblInstructions}</div>
+                  <div className="flex flex-col gap-3 max-h-48 overflow-y-auto pr-1">
+                    {result.instructionsEn.map((step, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                        <span className="text-[10px] text-zinc-500 font-mono mt-2">{idx + 1}.</span>
+                        <textarea 
+                          placeholder={dict.lblStepEn}
+                          value={step}
+                          onChange={(e) => handleStepChange(idx, false, e.target.value)}
+                          className="flex-1 bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-white text-[11px] outline-none h-14 resize-none"
+                        />
+                        <textarea 
+                          placeholder={dict.lblStepUr}
+                          value={result.instructionsUr[idx] || ''}
+                          onChange={(e) => handleStepChange(idx, true, e.target.value)}
+                          className="flex-1 bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-white text-[11px] outline-none h-14 resize-none text-right font-urdu-nastaliq"
+                          dir="rtl"
+                        />
+                        <button 
+                          onClick={() => handleRemoveStep(idx)}
+                          className="w-7 h-7 bg-red-950/30 hover:bg-red-900/40 border border-red-900/30 text-red-400 rounded-lg font-bold flex items-center justify-center text-[10px] mt-3"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={handleAddStep}
+                    className="self-start text-[10px] bg-zinc-950 hover:bg-zinc-900 text-orange-400 border border-zinc-800 px-3 py-1.5 rounded-lg transition-all font-semibold"
+                  >
+                    {dict.btnAddStep}
+                  </button>
                 </div>
               </div>
+            ) : (
+              /* Beautiful Formatted Card Mode */
+              <div className={`border border-zinc-800 p-4 rounded-2xl bg-zinc-950/30 flex flex-col gap-3 ${previewLang === 'ur' ? 'font-urdu-nastaliq text-right' : 'font-sans'}`} dir={previewLang === 'ur' ? 'rtl' : 'ltr'}>
+                <h3 className="font-extrabold text-white text-base">{previewLang === 'ur' ? result.titleUr : result.titleEn}</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">{previewLang === 'ur' ? result.descriptionUr : result.descriptionEn}</p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border-t border-b border-zinc-800 py-3 text-[10px] text-zinc-500">
+                  <div><strong>{dict.lblRegion}</strong> {previewLang === 'ur' ? result.regionUr : result.regionEn}</div>
+                  <div><strong>{dict.lblBudget}</strong> {result.costTier}</div>
+                  <div><strong>{dict.lblOccasion}</strong> {result.occasions.join(', ')}</div>
+                  <div><strong>{dict.lblTime}</strong> {previewLang === 'ur' ? result.timeUr : result.timeEn}</div>
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <div className="text-xs font-bold text-white">{dict.lblInstructions}</div>
-                <ol className="list-decimal list-inside text-xs text-zinc-400 flex flex-col gap-1">
-                  {(previewLang === 'ur' ? result.instructionsUr : result.instructionsEn).map((step, idx) => (
-                    <li key={idx}>{step}</li>
-                  ))}
-                </ol>
+                <div className="flex flex-col gap-1.5">
+                  <div className="text-xs font-bold text-white">{dict.lblIngredients}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {(previewLang === 'ur' ? result.ingredientsUr : result.ingredientsEn).map((ing, idx) => (
+                      ing.trim() && (
+                        <span key={idx} className="text-[10px] bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded-full text-zinc-300">{ing}</span>
+                      )
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="text-xs font-bold text-white">{dict.lblInstructions}</div>
+                  <ol className="list-decimal list-inside text-xs text-zinc-400 flex flex-col gap-1">
+                    {(previewLang === 'ur' ? result.instructionsUr : result.instructionsEn).map((step, idx) => (
+                      step.trim() && (
+                        <li key={idx}>{step}</li>
+                      )
+                    ))}
+                  </ol>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Action buttons */}
             <div className="flex gap-4 flex-wrap mt-2">
@@ -433,10 +894,8 @@ export default function DegchiRouteComponent() {
                 {dict.btnPublishFeed}
               </button>
             </div>
-
           </div>
         )}
-
       </div>
     </div>
   );

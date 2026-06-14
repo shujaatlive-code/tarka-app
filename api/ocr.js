@@ -1,5 +1,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+const SYSTEM_PROMPT = `You are Degchi, a careful multilingual culinary document transcriber. Read the uploaded handwritten or printed recipe image/PDF exactly, including Urdu, Roman Urdu, and English. Identify every distinct recipe visible on the page. Do not invent a family name, title, ingredient, quantity, step, occasion, or cooking time. Translate Urdu into concise English while preserving the original Urdu in Urdu fields. Normalize obvious units (tsp, tbsp, cups, g, kg) but preserve uncertain text in notes and mark confidence low. If a title is absent, use a factual ingredient-based title. Return only valid JSON with this exact shape:
+{"recipes":[{"title":"","urduTitle":"","description":"","urduDescription":"","ingredients":[{"name":"","urduName":"","amount":"","category":"Proteins|Vegetables|Spices|Grains|Dairy|Staples"}],"steps":[{"en":"","ur":""}],"cost":"$|$$|$$$","occasion":"Family recipe","timeMinutes":45,"confidence":"high|medium|low","notes":[""]}]}`;
+
+function stripJsonFences(value) {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,43 +39,12 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt = `
-      You are the "Degchi AI Recipe Standardizer". 
-      Analyze this image of a handwritten recipe notebook, physical recipe card, or cookbook print.
-      1. Transcribe the contents accurately.
-      2. Normalize all measurements into standard kitchen metrics (e.g. convert 'dahi' to 'Yogurt', 'tamatar' to 'Tomatoes').
-      3. Generate a complete, high-fidelity bilingual representation of the recipe (both English and Urdu).
-      4. Translate the title, description, region, cuisine, time, difficulty, ingredients, and instructions.
-      
-      You MUST respond in strict JSON format with the following keys:
-      {
-        "titleEn": "...",
-        "titleUr": "...",
-        "descriptionEn": "...",
-        "descriptionUr": "...",
-        "ingredientsEn": ["ingredient 1", "ingredient 2"],
-        "ingredientsUr": ["ingredient 1", "ingredient 2"],
-        "instructionsEn": ["step 1", "step 2"],
-        "instructionsUr": ["step 1", "step 2"],
-        "regionEn": "...",
-        "regionUr": "...",
-        "cuisineEn": "...",
-        "cuisineUr": "...",
-        "timeEn": "...",
-        "timeUr": "...",
-        "difficultyEn": "Easy" | "Medium" | "Hard",
-        "difficultyUr": "آسان" | "درمیانہ" | "مشکل",
-        "costTier": "$" | "$$" | "$$$",
-        "occasions": ["Occasion 1", "Occasion 2"]
-      }
-    `;
-
     const result = await model.generateContent({
       contents: [
         {
           role: 'user',
           parts: [
-            { text: prompt },
+            { text: SYSTEM_PROMPT },
             {
               inlineData: {
                 data: base64Data,
@@ -80,8 +60,65 @@ export default async function handler(req, res) {
     });
 
     const textResponse = result.response.text();
-    const parsedData = JSON.parse(textResponse);
-    return res.status(200).json(parsedData);
+    if (!textResponse) {
+      throw new Error("No text response was received from the Gemini AI service.");
+    }
+
+    const cleanedText = stripJsonFences(textResponse);
+    let parsedData;
+    try {
+      parsedData = JSON.parse(cleanedText);
+    } catch (parseErr) {
+      console.error("Failed to parse Gemini output as JSON. Raw text:", textResponse);
+      throw new Error("The handwriting was read, but the result was in an incomplete format. Try a brighter, straighter photo.");
+    }
+
+    // Validate structure
+    if (!parsedData || !Array.isArray(parsedData.recipes) || parsedData.recipes.length === 0) {
+      throw new Error("No recipes could be identified on this upload. Ensure the recipe text is visible.");
+    }
+
+    const rawRecipe = parsedData.recipes[0];
+    
+    // Validate required fields
+    if (!rawRecipe.ingredients || !Array.isArray(rawRecipe.ingredients) || rawRecipe.ingredients.length === 0) {
+      throw new Error("The handwriting scanner could not identify any ingredients. Try cropping to focus on the recipe list.");
+    }
+    if (!rawRecipe.steps || !Array.isArray(rawRecipe.steps) || rawRecipe.steps.length === 0) {
+      throw new Error("The handwriting scanner could not identify any cooking steps. Try a clearer image.");
+    }
+
+    // Map Lovable schema to frontend Tarka schema
+    const mappedRecipe = {
+      titleEn: rawRecipe.title || "Untitled Scanned Recipe",
+      titleUr: rawRecipe.urduTitle || rawRecipe.title || "بغیر عنوان کی ترکیب",
+      descriptionEn: rawRecipe.description || "Recipe transcribed from the uploaded note.",
+      descriptionUr: rawRecipe.urduDescription || rawRecipe.description || "ترکیب اپ لوڈ کردہ نوٹ سے نقل کی گئی ہے۔",
+      ingredientsEn: rawRecipe.ingredients.map(i => {
+        const amt = i.amount ? i.amount.trim() : "";
+        const name = i.name ? i.name.trim() : "";
+        return amt ? `${amt} ${name}` : name;
+      }).filter(Boolean),
+      ingredientsUr: rawRecipe.ingredients.map(i => {
+        const amt = i.amount ? i.amount.trim() : "";
+        const name = (i.urduName || i.name || "").trim();
+        return amt ? `${amt} ${name}` : name;
+      }).filter(Boolean),
+      instructionsEn: rawRecipe.steps.map(s => (s.en || "").trim()).filter(Boolean),
+      instructionsUr: rawRecipe.steps.map(s => (s.ur || s.en || "").trim()).filter(Boolean),
+      regionEn: "Punjab",
+      regionUr: "پنجاب",
+      cuisineEn: "Pakistani",
+      cuisineUr: "پاکستانی",
+      timeEn: `${rawRecipe.timeMinutes || 45} mins`,
+      timeUr: `${rawRecipe.timeMinutes || 45} منٹ`,
+      difficultyEn: rawRecipe.confidence === 'high' ? 'Easy' : rawRecipe.confidence === 'medium' ? 'Medium' : 'Hard',
+      difficultyUr: rawRecipe.confidence === 'high' ? 'آسان' : rawRecipe.confidence === 'medium' ? 'درمیانہ' : 'مشکل',
+      costTier: ["$", "$$", "$$$"].includes(rawRecipe.cost) ? rawRecipe.cost : "$$",
+      occasions: [rawRecipe.occasion || "Family Recipe"]
+    };
+
+    return res.status(200).json(mappedRecipe);
   } catch (error) {
     console.error('Gemini Serverless OCR Function Error:', error);
     return res.status(500).json({ error: error.message || String(error) });
