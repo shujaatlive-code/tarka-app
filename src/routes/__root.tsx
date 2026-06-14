@@ -123,37 +123,25 @@ export default function RootLayout() {
         <div className="flex gap-4 p-2">
           <Link 
             to="/" 
-            className={({ isActive }) => 
-              `px-5 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${
-                isActive 
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' 
-                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
-              }`
-            }
+            className="px-5 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2"
+            activeProps={{ className: 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' }}
+            inactiveProps={{ className: 'text-zinc-400 hover:text-white hover:bg-white/5' }}
           >
             {dict.navFeed}
           </Link>
           <Link 
             to="/matcher" 
-            className={({ isActive }) => 
-              `px-5 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${
-                isActive 
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' 
-                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
-              }`
-            }
+            className="px-5 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2"
+            activeProps={{ className: 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' }}
+            inactiveProps={{ className: 'text-zinc-400 hover:text-white hover:bg-white/5' }}
           >
             {dict.navMatcher}
           </Link>
           <Link 
             to="/degchi" 
-            className={({ isActive }) => 
-              `px-5 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${
-                isActive 
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' 
-                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
-              }`
-            }
+            className="px-5 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2"
+            activeProps={{ className: 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' }}
+            inactiveProps={{ className: 'text-zinc-400 hover:text-white hover:bg-white/5' }}
           >
             {dict.navDegchi}
           </Link>

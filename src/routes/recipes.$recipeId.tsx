@@ -323,7 +323,7 @@ export default function RecipeDetailRouteComponent() {
               🔥 {dict.upvoteAction}
             </button>
             <button 
-              onClick={handleCookedIt}
+              onClick={() => handleCookedIt()}
               disabled={isCooked}
               className={`flex-1 font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 border transition-all ${isCooked ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'}`}
             >

@@ -31,7 +31,7 @@ function stripJsonFences(value: string): string {
 
 // 1. Google Gemini 1.5 Flash OCR Transcription
 export async function standardizeRecipeWithGemini(file: File): Promise<any> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
 
   // 1. Try Vercel Serverless Function Proxy First (Avoids Browser CORS Block)
   try {
@@ -153,7 +153,7 @@ export async function standardizeRecipeWithGemini(file: File): Promise<any> {
 
 // 2. Unsplash Food Cover Photo Finder
 export async function fetchRecipeCoverPhoto(keyword: string): Promise<string> {
-  const accessKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
+  const accessKey = (import.meta as any).env.VITE_UNSPLASH_ACCESS_KEY;
   if (!accessKey || accessKey === "mock-api-key") {
     // If no Unsplash key is configured, return local fallback image
     return 'mediterranean_hummus.png';
