@@ -453,6 +453,19 @@ export const TarkaDB = {
     localStorage.setItem('tarka_completed_steps', JSON.stringify(steps));
   },
 
+  // 8. Image Upload helper (Compresses to Base64 data URLs for 100% free Firestore DB storage)
+  async uploadFile(file: File, path: string): Promise<string> {
+    try {
+      const base64Str = await compressImageToBase64(file);
+      console.log(`Compressed image successfully. Base64 size: ${Math.round(base64Str.length / 1024)} KB`);
+      return base64Str || URL.createObjectURL(file);
+    } catch (err) {
+      console.warn("Browser compression failed, utilizing object URL preview fallback:", err);
+      return URL.createObjectURL(file);
+    }
+  }
+};
+
 // Browser client-side image compressor (scales down and compresses to JPEG to fit within 1MB Firestore limit)
 async function compressImageToBase64(file: File, maxW = 500, maxH = 500, quality = 0.7): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -496,16 +509,3 @@ async function compressImageToBase64(file: File, maxW = 500, maxH = 500, quality
     reader.readAsDataURL(file);
   });
 }
-
-// 8. Image Upload helper (Compresses to Base64 data URLs for 100% free Firestore DB storage)
-  async uploadFile(file: File, path: string): Promise<string> {
-    try {
-      const base64Str = await compressImageToBase64(file);
-      console.log(`Compressed image successfully. Base64 size: ${Math.round(base64Str.length / 1024)} KB`);
-      return base64Str || URL.createObjectURL(file);
-    } catch (err) {
-      console.warn("Browser compression failed, utilizing object URL preview fallback:", err);
-      return URL.createObjectURL(file);
-    }
-  }
-};
